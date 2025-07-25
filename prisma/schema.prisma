@@ -1,0 +1,279 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 学校マスターデータ
+model School {
+  id          String @id @default(cuid())
+  name        String @unique
+  shortName   String
+  prefecture  String @default("愛知県")
+  
+  // 教育理念・求める生徒像
+  mission     String
+  vision      String?
+  
+  // 面接傾向データ（JSON）
+  interviewConfig Json
+  
+  // 志願理由書項目の重み設定
+  essayWeights Json // {motivation: 0.15, research: 0.6, schoolLife: 0.1, future: 0.15}
+  
+  // リレーション
+  users       User[]
+  sessions    InterviewSession[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("schools")
+}
+
+// ユーザー（小学6年生 + 保護者）
+model User {
+  id                    String @id @default(cuid())
+  email                 String @unique
+  
+  // 基本情報
+  studentName           String
+  grade                 Int @default(6)
+  targetSchoolId        String
+  targetSchool          School @relation(fields: [targetSchoolId], references: [id])
+  
+  // 保護者情報
+  parentEmail           String?
+  parentName            String?
+  parentConsent         Boolean @default(false)
+  consentTimestamp      DateTime?
+  consentVersion        Int @default(1)
+  
+  // プライバシー管理
+  dataRetentionUntil    DateTime
+  
+  // 学習設定
+  accessibilitySettings Json? // {highContrast: boolean, fontSize: string, furigana: boolean}
+  preferredMascot       String? // キャラクター選択
+  
+  // リレーション
+  applicationEssays     ApplicationEssay[]
+  interviewSessions     InterviewSession[]
+  progressRecords       ProgressRecord[]
+  
+  // NextAuth.js用
+  accounts              Account[]
+  sessions              Session[]
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  lastLoginAt           DateTime?
+  
+  @@map("users")
+}
+
+// 志願理由書
+model ApplicationEssay {
+  id              String @id @default(cuid())
+  userId          String
+  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 4項目構造
+  motivation      String // 志望動機
+  research        String // 探究活動の実績・経験  
+  schoolLife      String // 中学・高校生活の抱負
+  future          String // 将来の目標
+  
+  // AI分析結果
+  analysisResult  Json? // {keywords: string[], strengths: string[], improvements: string[]}
+  analysisVersion String? // 分析モデルのバージョン
+  
+  // メタデータ
+  wordCount       Int
+  isActive        Boolean @default(true)
+  
+  // リレーション
+  interviewSessions InterviewSession[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("application_essays")
+}
+
+// 面接セッション
+model InterviewSession {
+  id                    String @id @default(cuid())
+  userId                String
+  user                  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  schoolId              String
+  school                School @relation(fields: [schoolId], references: [id])
+  
+  applicationEssayId    String
+  applicationEssay      ApplicationEssay @relation(fields: [applicationEssayId], references: [id])
+  
+  // セッション情報
+  status                SessionStatus @default(PENDING)
+  duration              Int? // 秒数
+  questionCount         Int @default(5)
+  
+  // AI設定
+  aiModel               String // "gpt-4-turbo", "claude-3-5-sonnet"
+  sessionConfig         Json // 質問生成パラメータ
+  
+  // 評価結果
+  overallScore          Float?
+  detailedScores        Json? // {motivation: number, research: number, etc.}
+  feedback              String?
+  improvementSuggestions Json?
+  
+  // リレーション
+  questions             SessionQuestion[]
+  
+  startedAt             DateTime?
+  completedAt           DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  @@map("interview_sessions")
+}
+
+// セッション内の質問・回答
+model SessionQuestion {
+  id                String @id @default(cuid())
+  sessionId         String
+  session           InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  // 質問データ
+  questionOrder     Int
+  questionText      String
+  questionType      QuestionType
+  focusArea         String // "motivation", "research", "schoolLife", "future"
+  
+  // 回答データ
+  answerText        String?
+  answerDuration    Int? // 秒数
+  answerMethod      AnswerMethod? // VOICE, KEYBOARD, MIXED
+  
+  // 評価
+  score             Float?
+  aiEvaluation      Json? // {relevance: number, specificity: number, logic: number}
+  feedback          String?
+  
+  // 音声データ（オプション）
+  audioFileUrl      String?
+  transcriptConfidence Float?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@map("session_questions")
+}
+
+// 学習進捗記録
+model ProgressRecord {
+  id                String @id @default(cuid())
+  userId            String
+  user              User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 記録期間
+  recordDate        DateTime @default(now())
+  recordType        RecordType // DAILY, WEEKLY, MONTHLY
+  
+  // スコア情報
+  averageScore      Float
+  scoresByArea      Json // {motivation: number, research: number, etc.}
+  sessionsCount     Int
+  totalPracticeTime Int // 分数
+  
+  // 成長指標
+  improvementRate   Float? // 前回との比較
+  weakAreas         Json // 弱点エリア
+  strongAreas       Json // 強みエリア
+  
+  // 推奨事項
+  recommendations   Json
+  
+  createdAt         DateTime @default(now())
+  
+  @@map("progress_records")
+}
+
+// NextAuth.js required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
+// Enums
+enum SessionStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  ERROR
+}
+
+enum QuestionType {
+  OPENING           // 導入質問
+  MOTIVATION        // 志望動機
+  RESEARCH_DEEP     // 探究活動深堀り
+  SCHOOL_LIFE       // 学校生活抱負
+  FUTURE_GOAL       // 将来目標
+  FOLLOW_UP         // フォローアップ
+  CLOSING           // 締めくくり
+}
+
+enum AnswerMethod {
+  VOICE             // 音声入力
+  KEYBOARD          // キーボード入力
+  MIXED             // 混合
+}
+
+enum RecordType {
+  DAILY
+  WEEKLY  
+  MONTHLY
+  MILESTONE
+}
