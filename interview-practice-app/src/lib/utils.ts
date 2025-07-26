@@ -304,7 +304,7 @@ export function handleError(error: unknown): string {
  */
 export function countCharacters(text: string): number {
   // 日本語文字を考慮した文字数カウント
-  return [...text].length;
+  return Array.from(text).length;
 }
 
 /**
@@ -312,5 +312,5 @@ export function countCharacters(text: string): number {
  */
 export function truncateText(text: string, maxLength: number): string {
   if (countCharacters(text) <= maxLength) return text;
-  return [...text].slice(0, maxLength).join('') + '...';
+  return Array.from(text).slice(0, maxLength).join('') + '...';
 }

@@ -272,8 +272,8 @@ export const PWAUtils = {
   registerBackgroundSync: async (tag: string): Promise<void> => {
     if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
       const registration = await navigator.serviceWorker.getRegistration();
-      if (registration) {
-        await registration.sync.register(tag);
+      if (registration && 'sync' in registration) {
+        await (registration as any).sync.register(tag);
       }
     }
   },

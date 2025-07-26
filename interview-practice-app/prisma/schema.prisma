@@ -1,8 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// 明和高校附属中学校 面接練習アプリ データベーススキーマ
+// 学習データの安全な管理とプライバシー保護を重視
 
 generator client {
   provider = "prisma-client-js"
@@ -12,4 +9,297 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// ユーザー（学生）情報
+model User {
+  // 基本情報
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  studentName          String    // 学生名
+  grade                Int       // 学年（6: 小学6年生）
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  lastLoginAt          DateTime?
+
+  // 認証関連
+  passwordHash         String?   // ハッシュ化されたパスワード
+  emailVerified        DateTime? // メール認証日時
+  
+  // 保護者同意・プライバシー
+  parentEmail          String?   // 保護者メールアドレス
+  parentConsent        Boolean   @default(false) // 保護者同意済み
+  consentDate          DateTime? // 同意取得日時
+  dataRetentionUntil   DateTime  // データ保持期限（1年後）
+  privacySettings      Json?     // プライバシー設定
+
+  // 志望校情報
+  targetSchoolId       String
+  targetSchool         TargetSchool @relation(fields: [targetSchoolId], references: [id])
+  
+  // 個人設定
+  accessibilitySettings Json?    // アクセシビリティ設定
+  preferredMascot      String?   // 好みのマスコット
+  languagePreference   String    @default("ja") // 言語設定
+  
+  // リレーション
+  essays               Essay[]
+  interviewSessions    InterviewSession[]
+  achievements         Achievement[]
+  parentCommunications ParentCommunication[]
+  
+  // NextAuth関連
+  accounts             Account[]
+  sessions             Session[]
+  
+  @@map("users")
+}
+
+// 志望校マスター
+model TargetSchool {
+  id                   String @id @default(cuid())
+  name                 String
+  type                 String // "public_integrated", "private", etc.
+  prefecture           String
+  evaluationCriteria   Json   // 評価基準設定
+  questionPatterns     Json   // 質問パターン設定
+  
+  // 明和中専用設定
+  meiwaSpecific        Json?  // 明和中特有の設定
+  
+  users                User[]
+  
+  @@map("target_schools")
+}
+
+// 志願理由書
+model Essay {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 内容
+  motivation      String   // 志望動機
+  research        String   // 探究活動
+  schoolLife      String   // 学校生活への抱負
+  future          String   // 将来への目標
+  
+  // メタデータ
+  researchTopic   String   // 探究テーマ
+  characterCount  Int      // 文字数
+  version         Int      @default(1) // バージョン
+  
+  // OCR関連
+  ocrSourceType   String?  // "handwritten", "typed", "voice"
+  ocrConfidence   Float?   // OCR信頼度
+  ocrProcessedAt  DateTime?
+  
+  // AI評価
+  aiEvaluation    Json?    // AI評価結果
+  evaluatedAt     DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  interviewSessions InterviewSession[]
+  
+  @@map("essays")
+}
+
+// 面接セッション
+model InterviewSession {
+  id                    String   @id @default(cuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  essayId               String?
+  essay                 Essay?   @relation(fields: [essayId], references: [id])
+  
+  // セッション情報
+  sessionType           String   // "practice", "mock_exam", "final_prep"
+  researchTopic         String
+  startTime             DateTime
+  endTime               DateTime?
+  duration              Int?     // 秒数
+  
+  // 進行状況
+  questionCount         Int      @default(0)
+  currentPhase          String   // "intro", "questions", "evaluation", "complete"
+  completionPercentage  Float    @default(0)
+  
+  // AI設定
+  aiProvider            String   @default("multi") // "openai", "claude", "gemini", "multi"
+  difficultyLevel       Int      @default(3) // 1-5
+  
+  // 評価結果
+  finalEvaluation       Json?    // 最終評価（明和中7項目）
+  overallScore          Float?   // 総合スコア
+  
+  // メタデータ
+  deviceInfo            Json?    // デバイス情報
+  networkQuality        String?  // ネットワーク品質
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  questions             InterviewQuestion[]
+  responses             InterviewResponse[]
+  realtimeAnalytics     RealtimeAnalytics[]
+  
+  @@map("interview_sessions")
+}
+
+// 面接質問
+model InterviewQuestion {
+  id                String   @id @default(cuid())
+  sessionId         String
+  session           InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  // 質問内容
+  questionText      String
+  questionType      String   // "basic_interest", "experience_detail", etc.
+  intent            String   // 質問の意図
+  difficulty        Int      // 難易度 1-5
+  
+  // 評価基準
+  evaluationCriteria Json    // 評価基準
+  expectedElements   Json?   // 期待される要素
+  
+  // メタデータ
+  orderIndex        Int      // 質問順序
+  generateTime      DateTime // 生成時刻
+  aiProvider        String   // 生成に使用したAI
+  
+  createdAt         DateTime @default(now())
+  
+  responses         InterviewResponse[]
+  
+  @@map("interview_questions")
+}
+
+// 面接回答
+model InterviewResponse {
+  id                String   @id @default(cuid())
+  sessionId         String
+  session           InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  questionId        String
+  question          InterviewQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  
+  // 回答内容
+  responseText      String
+  responseType      String   // "voice", "text"
+  duration          Int?     // 回答時間（秒）
+  
+  // 音声関連
+  audioTranscript   String?  // 音声転写
+  transcriptConfidence Float? // 転写信頼度
+  speechQuality     Json?    // 音声品質データ
+  
+  // AI評価
+  aiEvaluation      Json?    // 個別評価結果
+  realtimeAnalysis  Json?    // リアルタイム分析結果
+  
+  // フィードバック
+  suggestions       Json?    // 改善提案
+  strengths         Json?    // 良い点
+  
+  createdAt         DateTime @default(now())
+  evaluatedAt       DateTime?
+  
+  @@map("interview_responses")
+}
+
+// リアルタイム分析データ
+model RealtimeAnalytics {
+  id              String   @id @default(cuid())
+  sessionId       String
+  session         InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  // 分析データ
+  timestamp       DateTime
+  analysisType    String   // "confidence", "fluency", "engagement"
+  metricsData     Json     // 分析メトリクス
+  
+  // AI処理情報
+  processingTime  Int      // 処理時間（ms）
+  aiProvider      String   // 使用AI
+  
+  @@map("realtime_analytics")
+}
+
+// 学習成果・実績
+model Achievement {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 実績情報
+  type          String   // "session_completed", "score_improved", etc.
+  title         String   // 実績タイトル
+  description   String?  // 詳細説明
+  category      String   // "interview", "essay", "overall"
+  
+  // スコア・レベル
+  score         Float?   // 関連スコア
+  level         Int?     // レベル
+  metadata      Json?    // 追加データ
+  
+  unlockedAt    DateTime @default(now())
+  
+  @@map("achievements")
+}
+
+// 保護者向け通信
+model ParentCommunication {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 通信内容
+  type          String   // "progress_report", "consent_request", etc.
+  subject       String
+  content       String
+  
+  // ステータス
+  sentAt        DateTime @default(now())
+  readAt        DateTime?
+  responded     Boolean  @default(false)
+  responseData  Json?
+  
+  @@map("parent_communications")
+}
+
+// NextAuth標準テーブル
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }

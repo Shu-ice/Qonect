@@ -15,7 +15,7 @@ interface SpeechRecognitionErrorEvent extends Event {
 
 interface SpeechRecognition extends EventTarget {
   continuous: boolean;
-  grammars: SpeechGrammarList;
+  grammars: any; // SpeechGrammarList;
   interimResults: boolean;
   lang: string;
   maxAlternatives: number;

@@ -224,7 +224,7 @@ export function MascotCharacter({
           transition: { 
             duration: 0.5, 
             repeat: speaking ? Infinity : 0,
-            ease: "easeInOut"
+            ease: "easeInOut" as const
           }
         };
       case 'nodding':
@@ -234,7 +234,7 @@ export function MascotCharacter({
           },
           transition: { 
             duration: 1,
-            ease: "easeInOut"
+            ease: "easeInOut" as const
           }
         };
       case 'waving':
@@ -244,7 +244,7 @@ export function MascotCharacter({
           },
           transition: { 
             duration: 0.8,
-            ease: "easeInOut"
+            ease: "easeInOut" as const
           }
         };
       case 'jumping':
@@ -255,7 +255,7 @@ export function MascotCharacter({
           },
           transition: { 
             duration: 0.6,
-            ease: "easeOut"
+            ease: "easeOut" as const
           }
         };
       case 'floating':
@@ -266,7 +266,7 @@ export function MascotCharacter({
           transition: { 
             duration: 2,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: "easeInOut" as const
           }
         };
       default:
@@ -277,7 +277,7 @@ export function MascotCharacter({
           transition: { 
             duration: 3,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: "easeInOut" as const
           }
         };
     }
@@ -294,8 +294,8 @@ export function MascotCharacter({
         )}
         onClick={onClick}
         {...getAnimationProps()}
-        whileHover={onClick ? { scale: 1.05 } : undefined}
-        whileTap={onClick ? { scale: 0.95 } : undefined}
+        whileHover={onClick ? { scale: 1.05 } : {}}
+        whileTap={onClick ? { scale: 0.95 } : {}}
       >
         {renderMascotSVG()}
       </motion.div>
