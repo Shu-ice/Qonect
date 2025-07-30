@@ -189,6 +189,49 @@ ${evaluationSummary}
 export class MeiwaAIEvaluationService {
 
   /**
+   * 複数の明和中特化質問を生成
+   */
+  async generateQuestions(
+    researchTopic: string,
+    questionCount: number,
+    difficultyLevel: number
+  ): Promise<MeiwaQuestion[]> {
+    const questions: MeiwaQuestion[] = [];
+    const questionTypes: MeiwaQuestionType[] = [
+      'basic_interest',
+      'experience_detail', 
+      'social_awareness',
+      'complexity_check',
+      'empathy_test',
+      'growth_reflection',
+      'expression_quality',
+      'deep_dive'
+    ];
+
+    const previousResponses: string[] = [];
+
+    for (let i = 0; i < questionCount; i++) {
+      const questionType = questionTypes[i % questionTypes.length];
+      
+      const question = await this.generateMeiwaQuestion(
+        researchTopic,
+        previousResponses,
+        questionType
+      );
+
+      questions.push({
+        ...question,
+        difficulty: Math.min(5, Math.max(1, difficultyLevel)) as 1 | 2 | 3 | 4 | 5,
+      });
+
+      // ダミーレスポンスを追加（より良い質問生成のため）
+      previousResponses.push(`質問${i + 1}への回答`);
+    }
+
+    return questions;
+  }
+
+  /**
    * 明和中特化質問を生成
    */
   async generateMeiwaQuestion(

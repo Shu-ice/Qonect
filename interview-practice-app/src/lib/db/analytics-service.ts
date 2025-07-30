@@ -232,7 +232,7 @@ export class AnalyticsService {
       .filter(a => a.analysisType === 'confidence')
       .map(a => ({
         timestamp: a.timestamp,
-        value: a.metricsData?.confidence || 0,
+        value: (a.metricsData as any)?.confidence || 0,
       }));
 
     // エンゲージメントの変化
@@ -240,7 +240,7 @@ export class AnalyticsService {
       .filter(a => a.analysisType === 'engagement')
       .map(a => ({
         timestamp: a.timestamp,
-        value: a.metricsData?.engagement || 0,
+        value: (a.metricsData as any)?.engagement || 0,
       }));
 
     // AI処理パフォーマンス
@@ -400,7 +400,7 @@ export class AnalyticsService {
       where: { 
         userId,
         currentPhase: 'complete',
-        finalEvaluation: { not: null },
+        finalEvaluation: { not: null } as any,
       },
       select: {
         finalEvaluation: true,

@@ -93,25 +93,102 @@ export function MeiwaInterviewSession({
     }
   }, [sessionPhase, timeRemaining]);
 
-  const initializeSession = useCallback(() => {
-    const newSession: SessionType = {
-      sessionId: `meiwa_${Date.now()}`,
-      userId: 'current_user',
-      startTime: new Date(),
-      researchTopic,
-      questions: [],
-      responses: [],
-      progressMarkers: {
-        questionNumber: 0,
-        totalQuestions: 8, // 明和中は8-10問程度
-        completionPercentage: 0,
-        averageResponseTime: 0
-      }
-    };
+  const initializeSession = useCallback(async () => {
+    try {
+      // サーバーサイドで面接セッションを作成
+      const response = await fetch('/api/interview/session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          researchTopic,
+          sessionType: 'meiwa_practice',
+        }),
+      });
 
-    setSession(newSession);
-    generateFirstQuestion(newSession);
+      if (!response.ok) {
+        throw new Error('Failed to create session');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        const newSession: SessionType = {
+          sessionId: result.sessionId,
+          userId: 'current_user',
+          startTime: new Date(),
+          researchTopic,
+          questions: [],
+          responses: [],
+          progressMarkers: {
+            questionNumber: 1,
+            totalQuestions: 8,
+            completionPercentage: 0,
+            averageResponseTime: 0
+          }
+        };
+
+        setSession(newSession);
+        
+        // 最初の質問を設定
+        if (result.firstQuestion) {
+          const firstQuestion: MeiwaQuestion = {
+            id: result.firstQuestion.id || `q_${Date.now()}`,
+            question: result.firstQuestion.text,
+            type: result.firstQuestion.type as MeiwaQuestionType,
+            intent: result.firstQuestion.intent,
+            evaluationCriteria: [],
+            expectedResponse: '',
+            followUpTriggers: [],
+            difficulty: 3,
+          };
+          
+          setCurrentQuestion(firstQuestion);
+          setSessionPhase('questions');
+        }
+      }
+    } catch (error) {
+      console.error('Session initialization failed:', error);
+      // フォールバック: ローカルセッション作成
+      const fallbackSession: SessionType = {
+        sessionId: `meiwa_local_${Date.now()}`,
+        userId: 'current_user',
+        startTime: new Date(),
+        researchTopic,
+        questions: [],
+        responses: [],
+        progressMarkers: {
+          questionNumber: 0,
+          totalQuestions: 8,
+          completionPercentage: 0,
+          averageResponseTime: 0
+        }
+      };
+      
+      setSession(fallbackSession);
+      generateFirstQuestionFallback();
+    }
   }, [researchTopic]);
+
+  const generateFirstQuestionFallback = () => {
+    const fallbackQuestion: MeiwaQuestion = {
+      id: `q_fallback_${Date.now()}`,
+      question: `${researchTopic}について研究を始めたきっかけを教えてください。`,
+      type: 'basic_interest',
+      intent: '探究活動への基本的な興味・関心を確認する',
+      evaluationCriteria: [
+        '探究への真の興味を評価',
+        '実体験に基づく動機を確認'
+      ],
+      expectedResponse: '',
+      followUpTriggers: [],
+      difficulty: 3,
+    };
+    
+    setCurrentQuestion(fallbackQuestion);
+    setSessionPhase('questions');
+  };
 
   const generateFirstQuestion = useCallback(async (session: SessionType) => {
     try {

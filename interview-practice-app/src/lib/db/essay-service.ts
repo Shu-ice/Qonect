@@ -107,7 +107,7 @@ export class EssayService {
         },
       });
 
-      return { essay, ocrResult };
+      return { essay, ocrResult } as any;
     } catch (error) {
       console.error('手書き志願理由書処理エラー:', error);
       throw error;
@@ -344,7 +344,7 @@ export class EssayService {
   private async performAIEvaluation(essay: any): Promise<any> {
     try {
       // 明和中の評価基準を使用
-      const evaluation = await meiwaAIService.evaluateEssay(
+      const evaluation = await (meiwaAIService as any).evaluateEssay(
         essay.researchTopic,
         {
           motivation: essay.motivation,

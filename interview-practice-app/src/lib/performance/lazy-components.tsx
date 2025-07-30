@@ -45,63 +45,63 @@ export const LazyVoiceRecorder = dynamic(
 );
 
 export const LazyHandwritingUpload = dynamic(
-  () => import('@/components/features/essay/HandwritingUpload'),
+  () => import('@/components/ocr/HandwritingOCRUploader'),
   {
     loading: LoadingCard,
     ssr: false,
   }
 );
 
-// AI関連の重いコンポーネント
-export const LazyAIAnalysis = dynamic(
-  () => import('@/components/features/analysis/AIAnalysisDisplay'),
-  {
-    loading: LoadingSpinner,
-    ssr: false,
-  }
-);
+// AI関連の重いコンポーネント（将来実装）
+// export const LazyAIAnalysis = dynamic(
+//   () => import('@/components/features/analysis/AIAnalysisDisplay'),
+//   {
+//     loading: LoadingSpinner,
+//     ssr: false,
+//   }
+// );
 
-export const LazyStatsDashboard = dynamic(
-  () => import('@/components/features/dashboard/StatsDashboard'),
-  {
-    loading: LoadingCard,
-  }
-);
+// export const LazyStatsDashboard = dynamic(
+//   () => import('@/components/features/dashboard/StatsDashboard'),
+//   {
+//     loading: LoadingCard,
+//   }
+// );
 
-// 管理者向けコンポーネント（使用頻度が低い）
-export const LazyAdminPanel = dynamic(
-  () => import('@/components/admin/AdminPanel'),
-  {
-    loading: LoadingSpinner,
-    ssr: false,
-  }
-);
+// 管理者向けコンポーネント（将来実装）
+// export const LazyAdminPanel = dynamic(
+//   () => import('@/components/admin/AdminPanel'),
+//   {
+//     loading: LoadingSpinner,
+//     ssr: false,
+//   }
+// );
 
-export const LazyAnalyticsChart = dynamic(
-  () => import('@/components/charts/AnalyticsChart'),
-  {
-    loading: LoadingCard,
-    ssr: false,
-  }
-);
+// export const LazyAnalyticsChart = dynamic(
+//   () => import('@/components/charts/AnalyticsChart'),
+//   {
+//     loading: LoadingCard,
+//     ssr: false,
+//   }
+// );
 
-// PWA関連（必要に応じて遅延読み込み）
-export const LazyInstallPrompt = dynamic(
-  () => import('@/components/pwa/InstallPrompt'),
-  {
-    loading: () => null,
-    ssr: false,
-  }
-);
+// PWA関連（将来実装）
+// export const LazyInstallPrompt = dynamic(
+//   () => import('@/components/pwa/InstallPrompt'),
+//   {
+//     loading: () => null,
+//     ssr: false,
+//   }
+// );
 
-// テスト・デバッグ用コンポーネント
-export const LazyDebugPanel = dynamic(
-  () => import('@/components/debug/DebugPanel'),
-  {
-    loading: LoadingCard,
-    ssr: false,
-  }
-);
+// テスト・デバッグ用コンポーネント（将来実装）
+// export const LazyDebugPanel = dynamic(
+//   () => import('@/components/debug/DebugPanel'),
+//   {
+//     loading: LoadingCard,
+//     ssr: false,
+//   }
+// );
 
 /**
  * 条件付き遅延読み込みヘルパー
@@ -125,14 +125,14 @@ export function createConditionalLazyComponent<T extends ComponentType<any>>(
   );
 }
 
-// 使用例：開発環境でのみデバッグパネルを読み込み
-export const ConditionalDebugPanel = createConditionalLazyComponent(
-  () => import('@/components/debug/DebugPanel'),
-  () => process.env.NODE_ENV === 'development'
-);
+// 使用例：開発環境でのみデバッグパネルを読み込み（将来実装）
+// export const ConditionalDebugPanel = createConditionalLazyComponent(
+//   () => import('@/components/debug/DebugPanel'),
+//   () => process.env.NODE_ENV === 'development'
+// );
 
-// 使用例：特定の機能フラグが有効な場合のみ読み込み
-export const ConditionalFeature = createConditionalLazyComponent(
-  () => import('@/components/features/experimental/NewFeature'),
-  () => process.env.NEXT_PUBLIC_ENABLE_EXPERIMENTAL_FEATURES === 'true'
-);
+// 使用例：特定の機能フラグが有効な場合のみ読み込み（将来実装）
+// export const ConditionalFeature = createConditionalLazyComponent(
+//   () => import('@/components/features/experimental/NewFeature'),
+//   () => process.env.NEXT_PUBLIC_ENABLE_EXPERIMENTAL_FEATURES === 'true'
+// );

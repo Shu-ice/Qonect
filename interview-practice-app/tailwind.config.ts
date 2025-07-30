@@ -10,8 +10,31 @@ const config: Config = {
     extend: {
       // プレミアムカラーパレット（心理学的配慮）
       colors: {
+        border: "var(--border)",
+        input: "var(--input)",
+        ring: "var(--ring)",
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        muted: {
+          DEFAULT: "var(--muted)",
+          foreground: "var(--muted-foreground)",
+        },
+        accent: {
+          DEFAULT: "var(--accent)",
+          foreground: "var(--accent-foreground)",
+        },
+        destructive: {
+          DEFAULT: "var(--destructive)",
+          foreground: "var(--destructive-foreground)",
+        },
+        card: {
+          DEFAULT: "var(--card, var(--background))",
+          foreground: "var(--card-foreground, var(--foreground))",
+        },
         // プライマリーカラー（信頼感・安心感）
         primary: {
+          DEFAULT: "var(--primary)",
+          foreground: "var(--primary-foreground)",
           50: '#eff6ff',
           100: '#dbeafe', 
           200: '#bfdbfe',
@@ -86,7 +109,7 @@ const config: Config = {
         },
         
         // 小学生向けアクセント
-        accent: {
+        'accent-colors': {
           pink: '#f472b6',
           purple: '#a855f7', 
           cyan: '#06b6d4',

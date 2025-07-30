@@ -172,7 +172,7 @@ export class InterviewService {
   ): Promise<InterviewSession> {
     return await prisma.interviewSession.update({
       where: { id: sessionId },
-      data: updates,
+      data: updates as any,
     });
   }
 
@@ -461,7 +461,7 @@ export class InterviewService {
       .filter(a => a.analysisType === 'confidence')
       .map(a => ({
         timestamp: a.timestamp,
-        confidence: a.metricsData?.confidence || 0,
+        confidence: (a.metricsData as any)?.confidence || 0,
       }));
   }
 
@@ -470,7 +470,7 @@ export class InterviewService {
       .filter(a => a.analysisType === 'engagement')
       .map(a => ({
         timestamp: a.timestamp,
-        engagement: a.metricsData?.engagement || 0,
+        engagement: (a.metricsData as any)?.engagement || 0,
       }));
   }
 

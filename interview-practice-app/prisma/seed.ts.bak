@@ -1,0 +1,251 @@
+import { PrismaClient } from '../src/generated/prisma';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log('Seeding database...');
+
+  // 志望校の作成
+  const meiwaSchool = await prisma.targetSchool.upsert({
+    where: { id: 'meiwa-junior-high' },
+    create: {
+      id: 'meiwa-junior-high',
+      name: '明和高等学校附属中学校',
+      prefecture: '愛知県',
+      type: 'public_integrated',
+      evaluationCriteria: {
+        '真の興味・関心度': '探究活動への本質的な興味を評価',
+        '体験・学び基盤性': '実体験に基づく学習を重視',
+        '社会・日常連結性': '日常生活・社会との関連を評価',
+        '探究性・非正解性': '正解のない複雑な問題への対応',
+        '他者理解・共感可能性': '説明力と共感可能性を評価',
+        '自己変容・成長実感': '探究による自己変化を評価',
+        '自分の言葉表現力': 'オリジナリティのある表現を評価',
+      },
+      questionPatterns: {
+        basic_interest: ['なぜこの探究テーマを選んだのですか？'],
+        experience_detail: ['具体的にどのような方法で調べましたか？'],
+        social_awareness: ['この研究は社会とどう関わっていますか？'],
+        complexity_check: ['その問題には決まった正解がありますか？'],
+        empathy_test: ['友達にどう説明しますか？'],
+        growth_reflection: ['この活動を通してどう変わりましたか？'],
+        expression_quality: ['あなたの言葉で教えてください'],
+      },
+      meiwaSpecific: {
+        website: 'https://meiwa-h.aichi-c.ed.jp/',
+        characteristics: [
+          '探究活動重視',
+          '中高一貫教育',
+          '国際理解教育',
+          '少人数制',
+        ],
+        admissionInfo: {
+          applicationPeriod: '2025年12月中旬〜下旬',
+          examDate: '2026年1月中旬',
+          subjects: ['適性検査I', '適性検査II', '面接'],
+          capacity: 80,
+        },
+      },
+    },
+    update: {
+      name: '明和高等学校附属中学校',
+    },
+  });
+
+  // テストユーザーの作成
+  const testUser = await prisma.user.upsert({
+    where: { email: 'test@meiwa.com' },
+    create: {
+      id: 'test-user-001',
+      email: 'test@meiwa.com',
+      studentName: '田中太郎',
+      grade: 6,
+      parentEmail: 'parent@meiwa.com',
+      parentConsent: true,
+      consentDate: new Date(),
+      dataRetentionUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1年後
+      targetSchoolId: meiwaSchool.id,
+      preferredMascot: 'friendly-bear',
+      accessibilitySettings: {
+        highContrast: false,
+        fontSize: 'medium',
+        furigana: false,
+      },
+      privacySettings: {
+        shareWithParents: true,
+        dataAnalytics: true,
+        marketingEmails: false,
+      },
+    },
+    update: {
+      studentName: '田中太郎',
+    },
+  });
+
+  // サンプル志願理由書の作成  
+  const sampleEssay = await prisma.essay.create({
+    data: {
+      id: 'essay-test-001',
+      userId: testUser.id,
+      motivation: '私は明和高校附属中学校で探究活動を深めたいと考えています。小学校で取り組んだ環境問題の研究を通して、もっと深く学びたいという気持ちが強くなりました。',
+      research: '私は小学4年生から地域の川の水質調査を続けています。最初は自由研究のつもりでしたが、調査を続けるうちに季節による変化や、上流と下流での違いに気づきました。特に雨の後の水質変化には驚きました。',
+      schoolLife: '明和中学校では、同じように探究心を持つ仲間と一緒に学び、お互いを高め合いたいです。また、先生方からの指導を受けながら、より科学的なアプローチで研究を進めたいと思います。',
+      future: '将来は環境問題の解決に貢献できる研究者になりたいです。地域の環境を守り、次の世代にきれいな地球を残せるような仕事をしたいと考えています。',
+      researchTopic: '地域の川の水質調査と環境保護',
+      characterCount: 400,
+      ocrSourceType: 'handwritten',
+      ocrConfidence: 0.95,
+      ocrResult: {
+        confidence: 0.95,
+        pages: 1,
+        extractedText: '志願理由書のOCR結果テキスト...',
+        processingTime: 2.3,
+      },
+      analysisResult: {
+        overallScore: 85,
+        categories: {
+          motivation: {
+            score: 88,
+            keywords: ['探究活動', '環境問題', '深く学びたい'],
+            analysis: '明確な学習動機と継続的な興味が見られる',
+          },
+          research: {
+            score: 90,
+            keywords: ['水質調査', '季節変化', '科学的アプローチ'],
+            analysis: '具体的な研究活動と発見が記述されている',
+          },
+          schoolLife: {
+            score: 82,
+            keywords: ['仲間', '高め合う', '先生方の指導'],
+            analysis: '協調性と向学心が表現されている',
+          },
+          future: {
+            score: 80,
+            keywords: ['環境問題', '研究者', '次の世代'],
+            analysis: '将来への明確なビジョンが示されている',
+          },
+        },
+        strengths: [
+          '具体的な体験に基づく記述',
+          '継続的な取り組み',
+          '社会的視点の獲得',
+        ],
+        improvements: [
+          'より具体的な研究成果の記述',
+          '他者との協働経験の追加',
+        ],
+        recommendations: [
+          '研究結果の数値化',
+          '地域との関わりの強化',
+        ],
+      },
+      submittedAt: new Date(),
+      status: 'completed',
+    },
+  });
+
+  // サンプル面接セッションの作成
+  const sampleSession = await prisma.interviewSession.create({
+    data: {
+      id: 'session-test-001',
+      userId: testUser.id,
+      essayId: sampleEssay.id,
+      sessionType: 'meiwa_practice',
+      duration: 15 * 60, // 15分
+      totalQuestions: 8,
+      status: 'completed',
+      meiwaEvaluation: {
+        scores: {
+          genuineInterest: 4,
+          experientialBase: 5,
+          socialConnection: 4,
+          inquiryNature: 4,
+          empathyPossibility: 3,
+          selfTransformation: 4,
+          originalExpression: 4,
+        },
+        overallScore: 4.0,
+        feedback: {
+          strengths: [
+            '探究活動への真摯な取り組み',
+            '具体的な体験に基づく回答',
+          ],
+          improvements: [
+            '他者への説明をより分かりやすく',
+            '自分の変化をより具体的に',
+          ],
+          nextSteps: [
+            '研究成果の整理',
+            'プレゼンテーション練習',
+          ],
+        },
+      },
+      completedAt: new Date(),
+    },
+  });
+
+  // サンプル質問と回答の作成
+  const questions = [
+    {
+      questionText: 'なぜ水質調査という研究テーマを選んだのですか？',
+      questionType: 'basic_interest',
+      response: '近所の川で魚が少なくなっているのに気づいて、水がきれいじゃないのかなと思ったからです。',
+      analysisResult: {
+        score: 4,
+        transcript: '近所の川で魚が少なくなっているのに気づいて、水がきれいじゃないのかなと思ったからです。',
+        confidence: 0.92,
+        duration: 12.5,
+        pauseCount: 2,
+      },
+    },
+    {
+      questionText: '実際にどのような方法で水質を調べましたか？',
+      questionType: 'experience_detail',
+      response: 'pH試験紙とパックテストを使って、月に2回、同じ場所で測定しました。',
+      analysisResult: {
+        score: 5,
+        transcript: 'pH試験紙とパックテストを使って、月に2回、同じ場所で測定しました。',
+        confidence: 0.95,
+        duration: 8.3,
+        pauseCount: 1,
+      },
+    },
+  ];
+
+  for (let i = 0; i < questions.length; i++) {
+    const question = await prisma.interviewQuestion.create({
+      data: {
+        sessionId: sampleSession.id,
+        questionNumber: i + 1,
+        questionText: questions[i].questionText,
+        questionType: questions[i].questionType as any,
+        difficulty: 3,
+        category: 'research_experience',
+      },
+    });
+
+    await prisma.interviewResponse.create({
+      data: {
+        questionId: question.id,
+        responseText: questions[i].response,
+        audioFileUrl: `/audio/response_${i + 1}.wav`,
+        analysisResult: questions[i].analysisResult,
+        timestamp: new Date(Date.now() + i * 60000), // 1分間隔
+      },
+    });
+  }
+
+  console.log('Database seed completed successfully!');
+  console.log(`Created test user: ${testUser.email}`);
+  console.log(`Created target school: ${meiwaSchool.name}`);
+  console.log(`Created sample essay and interview session`);
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

@@ -254,7 +254,7 @@ export class ObjectCache<T> {
     let lruKey: string | null = null;
     let lruAccessCount = Infinity;
 
-    for (const [key, item] of this.cache) {
+    for (const [key, item] of Array.from(this.cache.entries())) {
       if (item.accessCount < lruAccessCount) {
         lruAccessCount = item.accessCount;
         lruKey = key;
@@ -375,7 +375,7 @@ export class PerformanceMonitor {
    */
   getAllStats(): Record<string, ReturnType<typeof this.getStats>> {
     const stats: Record<string, ReturnType<typeof this.getStats>> = {};
-    for (const name of this.metrics.keys()) {
+    for (const name of Array.from(this.metrics.keys())) {
       stats[name] = this.getStats(name);
     }
     return stats;

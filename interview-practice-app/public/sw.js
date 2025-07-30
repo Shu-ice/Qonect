@@ -1,1 +1,45 @@
-if(!self.define){let e,s={};const i=(i,t)=>(i=new URL(i+".js",t).href,s[i]||new Promise(s=>{if("document"in self){const e=document.createElement("script");e.src=i,e.onload=s,document.head.appendChild(e)}else e=i,importScripts(i),s()}).then(()=>{let e=s[i];if(!e)throw new Error(`Module ${i} didn’t register its module`);return e}));self.define=(t,n)=>{const a=e||("document"in self?document.currentScript.src:"")||location.href;if(s[a])return;let c={};const r=e=>i(e,a),o={module:{uri:a},exports:c,require:r};s[a]=Promise.all(t.map(e=>o[e]||r(e))).then(e=>(n(...e),c))}}define(["./workbox-67e23458"],function(e){"use strict";importScripts(),self.skipWaiting(),e.clientsClaim(),e.precacheAndRoute([{url:"/_next/app-build-manifest.json",revision:"34aae97fc9f15dafe771fa9ec113ef61"},{url:"/_next/static/chunks/117-4ae34a9a701a7de9.js",revision:"ueIzx2oINE0YjrEqiG-QJ"},{url:"/_next/static/chunks/124-61bb33a77ea80040.js",revision:"ueIzx2oINE0YjrEqiG-QJ"},{url:"/_next/static/chunks/413-7fefc8528629cdd4.js",revision:"ueIzx2oINE0YjrEqiG-QJ"},{url:"/_next/static/chunks/525.a63e54570faa6776.js",revision:"a63e54570faa6776"},{url:"/_next/static/chunks/678-ea745041990a49ff.js",revision:"ueIzx2oINE0YjrEqiG-QJ"},{url:"/_next/static/chunks/app/_not-found/page-98467b0ee1cfb9b0.js",revision:"ueIzx2oINE0YjrEqiG-QJ"},{url:"/_next/static/chunks/app/essay/page-a47eb77fbf896503.js",revision:"ueIzx2oINE0YjrEqiG-QJ"},{url:"/_next/static/chunks/app/layout-67a87a9f4895d373.js",revision:"ueIzx2oINE0YjrEqiG-QJ"},{url:"/_next/static/chunks/app/page-4197b5ccf64cc09d.js",revision:"ueIzx2oINE0YjrEqiG-QJ"},{url:"/_next/static/chunks/fd9d1056-6922f449a204c2cc.js",revision:"ueIzx2oINE0YjrEqiG-QJ"},{url:"/_next/static/chunks/framework-f66176bb897dc684.js",revision:"ueIzx2oINE0YjrEqiG-QJ"},{url:"/_next/static/chunks/main-1688822cb2ad42b8.js",revision:"ueIzx2oINE0YjrEqiG-QJ"},{url:"/_next/static/chunks/main-app-e71011a62feccd3f.js",revision:"ueIzx2oINE0YjrEqiG-QJ"},{url:"/_next/static/chunks/pages/_app-ec50c177bb353606.js",revision:"ueIzx2oINE0YjrEqiG-QJ"},{url:"/_next/static/chunks/pages/_error-4d91465942d9858e.js",revision:"ueIzx2oINE0YjrEqiG-QJ"},{url:"/_next/static/chunks/polyfills-42372ed130431b0a.js",revision:"846118c33b2c0e922d7b3a7676f81f6f"},{url:"/_next/static/chunks/webpack-2de4321c2ae0180f.js",revision:"ueIzx2oINE0YjrEqiG-QJ"},{url:"/_next/static/css/3bc671806f541707.css",revision:"3bc671806f541707"},{url:"/_next/static/media/4473ecc91f70f139-s.p.woff",revision:"78e6fc13ea317b55ab0bd6dc4849c110"},{url:"/_next/static/media/463dafcda517f24f-s.p.woff",revision:"cbeb6d2d96eaa268b4b5beb0b46d9632"},{url:"/_next/static/ueIzx2oINE0YjrEqiG-QJ/_buildManifest.js",revision:"99b8bc771d4d0bfe4302a3d383d8f36c"},{url:"/_next/static/ueIzx2oINE0YjrEqiG-QJ/_ssgManifest.js",revision:"b6652df95db52feb4daf4eca35380933"}],{ignoreURLParametersMatching:[]}),e.cleanupOutdatedCaches(),e.registerRoute("/",new e.NetworkFirst({cacheName:"start-url",plugins:[{cacheWillUpdate:async({request:e,response:s,event:i,state:t})=>s&&"opaqueredirect"===s.type?new Response(s.body,{status:200,statusText:"OK",headers:s.headers}):s}]}),"GET"),e.registerRoute(/^https:\/\/api\.openai\.com\/.*/i,new e.CacheFirst({cacheName:"openai-cache",plugins:[new e.ExpirationPlugin({maxEntries:32,maxAgeSeconds:86400})]}),"GET"),e.registerRoute(/^https:\/\/api\.anthropic\.com\/.*/i,new e.CacheFirst({cacheName:"anthropic-cache",plugins:[new e.ExpirationPlugin({maxEntries:32,maxAgeSeconds:86400})]}),"GET"),e.registerRoute(/^https:\/\/fonts\.googleapis\.com\/.*/i,new e.CacheFirst({cacheName:"google-fonts-stylesheets",plugins:[]}),"GET"),e.registerRoute(/^https:\/\/fonts\.gstatic\.com\/.*/i,new e.CacheFirst({cacheName:"google-fonts-webfonts",plugins:[new e.ExpirationPlugin({maxEntries:32,maxAgeSeconds:31536e3})]}),"GET"),e.registerRoute(/\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/i,new e.CacheFirst({cacheName:"images",plugins:[new e.ExpirationPlugin({maxEntries:64,maxAgeSeconds:2592e3})]}),"GET")});
+// 開発環境では Service Worker を無効化
+console.log('Service Worker を無効化しています...');
+
+// Service Worker が登録されている場合は削除
+self.addEventListener('install', function(event) {
+  console.log('Service Worker: インストールをスキップしています');
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', function(event) {
+  console.log('Service Worker: アクティベーション中');
+  event.waitUntil(
+    Promise.all([
+      // 既存のキャッシュをクリア
+      caches.keys().then(cacheNames => {
+        return Promise.all(
+          cacheNames.map(cacheName => {
+            console.log('Service Worker: キャッシュを削除中:', cacheName);
+            return caches.delete(cacheName);
+          })
+        );
+      }),
+      // すべてのクライアントに制御を転送
+      self.clients.claim()
+    ])
+  );
+});
+
+// フェッチイベントは素通しさせる（キャッシュしない）
+self.addEventListener('fetch', function(event) {
+  // ネットワークから直接取得
+  event.respondWith(fetch(event.request));
+});
+
+// バックグラウンド同期は無効化
+self.addEventListener('sync', function(event) {
+  console.log('Service Worker: バックグラウンド同期は無効化されています');
+});
+
+// プッシュ通知は無効化
+self.addEventListener('push', function(event) {
+  console.log('Service Worker: プッシュ通知は無効化されています');
+});
+
+console.log('Service Worker: 開発モードで起動完了');

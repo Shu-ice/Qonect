@@ -24,10 +24,10 @@ export const loadEssayService = () => import('@/lib/db/essay-service');
 export const loadAnalyticsService = () => import('@/lib/db/analytics-service');
 
 // 音声処理関連の遅延読み込み
-export const loadVoiceProcessing = () => import('@/lib/voice-processing');
+export const loadVoiceProcessing = () => import('@/lib/speech/voice-recognition');
 
-// 統計・チャート関連の遅延読み込み
-export const loadChartLibrary = () => import('react-chartjs-2');
+// 統計・チャート関連の遅延読み込み（チャートライブラリは必要に応じてインストール）
+// export const loadChartLibrary = () => import('react-chartjs-2');
 
 /**
  * 条件付きモジュール読み込み
@@ -109,22 +109,20 @@ export const loadAIIfEnabled = () =>
     () => process.env.NEXT_PUBLIC_AI_ENABLED === 'true'
   );
 
-// 管理者機能の読み込み
-export const loadAdminFeaturesIfAuthorized = (userRole: string) =>
-  ConditionalLoader.loadForRole(
-    'admin-features',
-    () => import('@/components/admin/AdminPanel'),
-    userRole,
-    ['admin', 'teacher']
-  );
+// 管理者機能の読み込み（将来実装）
+export const loadAdminFeaturesIfAuthorized = (userRole: string) => {
+  // 管理者機能は必要に応じて実装
+  console.log('Admin features not implemented yet for role:', userRole);
+  return Promise.resolve(null);
+};
 
-// モバイル専用機能の読み込み
-export const loadMobileFeaturesIfMobile = () =>
-  ConditionalLoader.loadForDevice(
-    'mobile-features',
-    () => import('@/components/mobile/MobileFeatures'),
-    () => /Mobi|Android/i.test(navigator.userAgent)
-  );
+// モバイル専用機能の読み込み（将来実装）
+export const loadMobileFeaturesIfMobile = () => {
+  if (typeof navigator !== 'undefined' && /Mobi|Android/i.test(navigator.userAgent)) {
+    console.log('Mobile features not implemented yet');
+  }
+  return Promise.resolve(null);
+};
 
 // OCR機能の条件付き読み込み（ファイルアップロード対応デバイスのみ）
 export const loadOCRIfSupported = () =>

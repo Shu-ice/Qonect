@@ -46,79 +46,99 @@ export default function EssayPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50">
-      {/* ヘッダー */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-premium-200 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 py-4">
+    <div className="min-h-screen bg-black text-white overflow-hidden">
+      {/* Apple-style ナビゲーション */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/70 backdrop-blur-2xl border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-6 py-5">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <PremiumButton variant="ghost" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  ホームに戻る
-                </PremiumButton>
+            <div className="flex items-center space-x-6">
+              <Link href="/" className="text-2xl font-semibold tracking-tight text-white hover:text-white/90 transition-colors duration-300">
+                Qonect
               </Link>
-              <div className="h-6 w-px bg-premium-300" />
-              <h1 className="text-xl font-bold text-premium-900">
+              <div className="h-6 w-px bg-white/20" />
+              <h1 className="text-xl font-semibold text-white/90">
                 志願理由書アップロード
               </h1>
             </div>
             
-            <div className="flex items-center space-x-3">
-              <div className="text-right">
-                <p className="text-sm font-medium text-premium-800">準備段階</p>
-                <p className="text-xs text-premium-600">Step 1 / 3</p>
-              </div>
-              <MascotCharacter
-                type="wise-owl"
-                size="sm"
-                emotion="encouraging"
-                animation="nodding"
-              />
+            <div className="text-sm font-medium text-white/60 px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm">
+              Step 1 / 3
             </div>
           </div>
         </div>
-      </header>
+      </nav>
+
+      {/* 動的な背景要素 */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/3 left-1/3 w-[500px] h-[500px] bg-gradient-to-r from-blue-500/15 to-cyan-500/15 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/3 right-1/3 w-[400px] h-[400px] bg-gradient-to-r from-purple-500/15 to-pink-500/15 rounded-full blur-3xl animate-pulse delay-1000" />
+      </div>
 
       {/* メインコンテンツ */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* 説明セクション */}
+      <main className="relative z-10 max-w-6xl mx-auto px-6 pt-24 pb-20">
+        {/* 美しい説明セクション */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+          className="text-center mb-20"
         >
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center space-x-3 mb-6">
-              <BookOpen className="w-8 h-8 text-primary-600" />
-              <h2 className="text-3xl font-bold text-premium-900">
-                志願理由書を読み込みましょう
-              </h2>
-            </div>
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.8 }}
+            className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter mb-8 leading-[0.9]"
+          >
+            <span className="block">
+              Essay
+            </span>
+            <span className="block bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent animate-pulse">
+              Upload
+            </span>
+          </motion.h1>
+          
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.8 }}
+            className="text-xl md:text-2xl font-light text-white/90 max-w-4xl mx-auto leading-relaxed tracking-wide mb-8"
+          >
+            あなたの志願理由書の内容を最新AIで分析し、
+            <br />
+            <span className="text-white/70">明和高校附属中学校の面接に特化した質問を生成します</span>
+          </motion.p>
             
-            <p className="text-lg text-premium-700 max-w-2xl mx-auto">
-              あなたの志願理由書の内容を分析して、明和高校附属中学校の面接に特化した質問を生成します。
-              探究活動の詳細について深く掘り下げた練習ができるようになります。
-            </p>
-            
-            <div className="flex flex-wrap justify-center gap-4 mt-6">
-              <div className="flex items-center space-x-2 bg-primary-50 px-3 py-2 rounded-full">
-                <Target className="w-4 h-4 text-primary-600" />
-                <span className="text-sm font-medium text-primary-800">明和中特化</span>
-              </div>
-              <div className="flex items-center space-x-2 bg-success-50 px-3 py-2 rounded-full">
-                <BookOpen className="w-4 h-4 text-success-600" />
-                <span className="text-sm font-medium text-success-800">4項目自動分析</span>
-              </div>
-            </div>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.8 }}
+            className="flex flex-wrap justify-center gap-6"
+          >
+            <motion.div 
+              whileHover={{ scale: 1.05, y: -4 }}
+              transition={{ type: "spring", stiffness: 400 }}
+              className="flex items-center space-x-3 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 backdrop-blur-xl border border-blue-400/30 px-8 py-4 rounded-full shadow-lg"
+            >
+              <Target className="w-6 h-6 text-blue-400" />
+              <span className="text-lg font-semibold text-white">明和中特化AI</span>
+            </motion.div>
+            <motion.div 
+              whileHover={{ scale: 1.05, y: -4 }}
+              transition={{ type: "spring", stiffness: 400 }}
+              className="flex items-center space-x-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-xl border border-purple-400/30 px-8 py-4 rounded-full shadow-lg"
+            >
+              <BookOpen className="w-6 h-6 text-purple-400" />
+              <span className="text-lg font-semibold text-white">4項目自動分析</span>
+            </motion.div>
+          </motion.div>
         </motion.div>
 
         {/* アップローダー */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.5, duration: 0.8 }}
+          className="mb-16"
         >
           <EssayUploader onEssayAnalyzed={handleEssayAnalyzed} />
         </motion.div>
@@ -126,10 +146,10 @@ export default function EssayPage() {
         {/* 分析結果表示 */}
         {essayAnalysis && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="mt-8"
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: 0.6, duration: 0.8, ease: [0.25, 0.8, 0.25, 1] }}
+            className="mb-16"
           >
             <EssayAnalysisDisplay 
               analysis={essayAnalysis}
@@ -141,30 +161,64 @@ export default function EssayPage() {
         {/* 次のステップ案内（基本分析のみの場合） */}
         {analyzedEssay && !essayAnalysis && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-8 text-center"
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.8, ease: [0.25, 0.8, 0.25, 1] }}
+            className="mb-16 text-center"
           >
-            <div className="bg-gradient-to-r from-primary-600 to-primary-800 text-white rounded-xl p-6">
-              <h3 className="text-xl font-bold mb-2">準備完了！</h3>
-              <p className="mb-4 opacity-90">
+            <div className="card-luxury gradient-premium text-white rounded-2xl p-10 relative overflow-hidden">
+              <motion.div 
+                className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent"
+                animate={{ x: [-100, 400] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              />
+              
+              <motion.h3 
+                className="text-3xl font-display font-bold mb-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                準備完了！
+              </motion.h3>
+              <motion.p 
+                className="mb-8 opacity-90 text-lg"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
                 次は学校選択と面接設定を行います
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <PremiumButton 
-                  variant="premium" 
-                  size="lg" 
-                  className="bg-white text-primary-700 hover:bg-premium-50"
-                  onClick={startMeiwaInterview}
+              </motion.p>
+              <motion.div 
+                className="flex flex-col sm:flex-row gap-6 justify-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  明和中面接を始める
-                </PremiumButton>
-                <Link href="/schools">
-                  <PremiumButton variant="outline" size="lg" className="border-white text-white hover:bg-white/10">
-                    他校面接を選ぶ
+                  <PremiumButton 
+                    variant="secondary" 
+                    size="xl" 
+                    className="bg-white text-primary-700 hover:bg-white/90 btn-premium ripple-effect py-4 px-8 text-lg font-semibold"
+                    onClick={startMeiwaInterview}
+                  >
+                    明和中面接を始める
                   </PremiumButton>
+                </motion.div>
+                <Link href="/schools">
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <PremiumButton variant="outline" size="xl" className="border-2 border-white text-white hover:bg-white/20 py-4 px-8 text-lg font-semibold">
+                      他校面接を選ぶ
+                    </PremiumButton>
+                  </motion.div>
                 </Link>
-              </div>
+              </motion.div>
             </div>
           </motion.div>
         )}
@@ -195,9 +249,10 @@ export default function EssayPage() {
         {/* 評価結果表示 */}
         {finalEvaluation && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-8 bg-white rounded-xl shadow-lg p-6"
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.8, ease: [0.25, 0.8, 0.25, 1] }}
+            className="mb-16 card-luxury bg-white rounded-2xl shadow-premium-xl p-10 hover-lift"
           >
             <h3 className="text-xl font-bold text-premium-900 mb-4 text-center">
               明和中7項目評価結果
@@ -278,59 +333,106 @@ export default function EssayPage() {
 
         {/* ヘルプセクション */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="mt-12 bg-premium-50 rounded-xl p-6"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8, duration: 0.8 }}
+          className="glass-effect bg-premium-50/80 rounded-2xl p-10 hover-lift"
         >
-          <h3 className="text-lg font-bold text-premium-900 mb-4 text-center">
+          <motion.h3 
+            className="text-3xl font-display font-bold text-premium-900 mb-10 text-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9 }}
+          >
             志願理由書について
-          </h3>
+          </motion.h3>
           
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <h4 className="font-medium text-premium-800">含めるべき内容</h4>
-              <ul className="space-y-2 text-sm text-premium-700">
-                <li className="flex items-start space-x-2">
-                  <span className="w-2 h-2 bg-primary-500 rounded-full mt-2 flex-shrink-0"></span>
-                  <span>明和高校附属中学校を志望する理由</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span className="w-2 h-2 bg-primary-500 rounded-full mt-2 flex-shrink-0"></span>
-                  <span>小学校で取り組んだ探究活動や調べ学習</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span className="w-2 h-2 bg-primary-500 rounded-full mt-2 flex-shrink-0"></span>
-                  <span>中学校・高校での学習や活動の目標</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span className="w-2 h-2 bg-primary-500 rounded-full mt-2 flex-shrink-0"></span>
-                  <span>将来の夢や目標</span>
-                </li>
+          <div className="grid md:grid-cols-2 gap-10">
+            <motion.div 
+              className="space-y-6"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.0, duration: 0.6 }}
+            >
+              <h4 className="text-xl font-bold text-premium-800 mb-4">含めるべき内容</h4>
+              <ul className="space-y-4">
+                <motion.li 
+                  className="flex items-start space-x-3"
+                  whileHover={{ x: 4 }}
+                  transition={{ type: "spring", stiffness: 400 }}
+                >
+                  <span className="w-3 h-3 bg-primary-500 rounded-full mt-2 flex-shrink-0 shadow-glow"></span>
+                  <span className="text-premium-700 font-medium">明和高校附属中学校を志望する理由</span>
+                </motion.li>
+                <motion.li 
+                  className="flex items-start space-x-3"
+                  whileHover={{ x: 4 }}
+                  transition={{ type: "spring", stiffness: 400 }}
+                >
+                  <span className="w-3 h-3 bg-primary-500 rounded-full mt-2 flex-shrink-0 shadow-glow"></span>
+                  <span className="text-premium-700 font-medium">小学校で取り組んだ探究活動や調べ学習</span>
+                </motion.li>
+                <motion.li 
+                  className="flex items-start space-x-3"
+                  whileHover={{ x: 4 }}
+                  transition={{ type: "spring", stiffness: 400 }}
+                >
+                  <span className="w-3 h-3 bg-primary-500 rounded-full mt-2 flex-shrink-0 shadow-glow"></span>
+                  <span className="text-premium-700 font-medium">中学校・高校での学習や活動の目標</span>
+                </motion.li>
+                <motion.li 
+                  className="flex items-start space-x-3"
+                  whileHover={{ x: 4 }}
+                  transition={{ type: "spring", stiffness: 400 }}
+                >
+                  <span className="w-3 h-3 bg-primary-500 rounded-full mt-2 flex-shrink-0 shadow-glow"></span>
+                  <span className="text-premium-700 font-medium">将来の夢や目標</span>
+                </motion.li>
               </ul>
-            </div>
+            </motion.div>
             
-            <div className="space-y-3">
-              <h4 className="font-medium text-premium-800">AI解析のポイント</h4>
-              <ul className="space-y-2 text-sm text-premium-700">
-                <li className="flex items-start space-x-2">
-                  <span className="w-2 h-2 bg-success-500 rounded-full mt-2 flex-shrink-0"></span>
-                  <span>明和中の教育理念との適合性を分析</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span className="w-2 h-2 bg-success-500 rounded-full mt-2 flex-shrink-0"></span>
-                  <span>探究活動の具体性と深さを評価</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span className="w-2 h-2 bg-success-500 rounded-full mt-2 flex-shrink-0"></span>
-                  <span>個別最適化された質問を自動生成</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span className="w-2 h-2 bg-success-500 rounded-full mt-2 flex-shrink-0"></span>
-                  <span>回答の改善点を具体的に提案</span>
-                </li>
+            <motion.div 
+              className="space-y-6"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.1, duration: 0.6 }}
+            >
+              <h4 className="text-xl font-bold text-premium-800 mb-4">AI解析のポイント</h4>
+              <ul className="space-y-4">
+                <motion.li 
+                  className="flex items-start space-x-3"
+                  whileHover={{ x: 4 }}
+                  transition={{ type: "spring", stiffness: 400 }}
+                >
+                  <span className="w-3 h-3 bg-success-500 rounded-full mt-2 flex-shrink-0 shadow-glow-success"></span>
+                  <span className="text-premium-700 font-medium">明和中の教育理念との適合性を分析</span>
+                </motion.li>
+                <motion.li 
+                  className="flex items-start space-x-3"
+                  whileHover={{ x: 4 }}
+                  transition={{ type: "spring", stiffness: 400 }}
+                >
+                  <span className="w-3 h-3 bg-success-500 rounded-full mt-2 flex-shrink-0 shadow-glow-success"></span>
+                  <span className="text-premium-700 font-medium">探究活動の具体性と深さを評価</span>
+                </motion.li>
+                <motion.li 
+                  className="flex items-start space-x-3"
+                  whileHover={{ x: 4 }}
+                  transition={{ type: "spring", stiffness: 400 }}
+                >
+                  <span className="w-3 h-3 bg-success-500 rounded-full mt-2 flex-shrink-0 shadow-glow-success"></span>
+                  <span className="text-premium-700 font-medium">個別最適化された質問を自動生成</span>
+                </motion.li>
+                <motion.li 
+                  className="flex items-start space-x-3"
+                  whileHover={{ x: 4 }}
+                  transition={{ type: "spring", stiffness: 400 }}
+                >
+                  <span className="w-3 h-3 bg-success-500 rounded-full mt-2 flex-shrink-0 shadow-glow-success"></span>
+                  <span className="text-premium-700 font-medium">回答の改善点を具体的に提案</span>
+                </motion.li>
               </ul>
-            </div>
+            </motion.div>
           </div>
         </motion.div>
       </main>

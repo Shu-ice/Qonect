@@ -10,6 +10,8 @@ export default withAuth(
     const protectedPaths = [
       '/dashboard',
       '/interview',
+      '/chat',
+      '/essay',
       '/practice',
       '/progress',
       '/settings',
@@ -17,6 +19,7 @@ export default withAuth(
       '/api/sessions',
       '/api/essays',
       '/api/progress',
+      '/api/user',
     ];
 
     // 管理者専用パス
@@ -101,6 +104,11 @@ export default withAuth(
       pathname === '/auth/signup' ||
       pathname === '/auth/parental-consent'
     )) {
+      return NextResponse.redirect(new URL('/dashboard', req.url));
+    }
+
+    // ルートパスの場合、認証済みユーザーはダッシュボードへ
+    if (token && pathname === '/') {
       return NextResponse.redirect(new URL('/dashboard', req.url));
     }
 

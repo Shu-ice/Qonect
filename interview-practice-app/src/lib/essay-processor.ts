@@ -274,6 +274,62 @@ export class EssayProcessor {
 export class AIEssayAnalyzer {
   
   /**
+   * 志願理由書の4項目構造を分析（APIエンドポイント用）
+   */
+  async analyzeEssay(essayContent: {
+    motivation: string;
+    research: string;
+    schoolLife: string;
+    future: string;
+  }, school: string = 'meiwa'): Promise<EssayAnalysis> {
+    try {
+      // 各項目を個別に分析
+      const analysis: EssayAnalysis = {
+        motivation: {
+          content: essayContent.motivation,
+          keyPoints: this.extractKeyPoints(essayContent.motivation),
+          strength: this.evaluateStrength(essayContent.motivation),
+          suggestions: this.generateSuggestions(essayContent.motivation, 'motivation')
+        },
+        research: {
+          content: essayContent.research,
+          topic: EssayProcessor.extractResearchTopic(essayContent.research),
+          depth: this.evaluateDepth(essayContent.research),
+          socialConnection: this.hasSocialConnection(essayContent.research),
+          methodology: this.extractMethodology(essayContent.research),
+          suggestions: this.generateSuggestions(essayContent.research, 'research')
+        },
+        schoolLife: {
+          content: essayContent.schoolLife,
+          aspirations: this.extractAspirations(essayContent.schoolLife),
+          feasibility: this.evaluateFeasibility(essayContent.schoolLife),
+          suggestions: this.generateSuggestions(essayContent.schoolLife, 'schoolLife')
+        },
+        future: {
+          content: essayContent.future,
+          goals: this.extractGoals(essayContent.future),
+          connection: this.evaluateConnection(essayContent.future, essayContent.research),
+          suggestions: this.generateSuggestions(essayContent.future, 'future')
+        },
+        overallScore: {
+          total: 0,
+          readiness: 0,
+          meiwaAlignment: 0
+        }
+      };
+
+      // 総合スコア計算
+      analysis.overallScore = this.calculateOverallScore(analysis);
+      
+      return analysis;
+      
+    } catch (error) {
+      console.error('Essay analysis error:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Geminiを使用した高度な志願理由書分析
    */
   static async analyzeWithAI(essayText: string): Promise<EssayAnalysis> {
@@ -359,6 +415,123 @@ export class AIEssayAnalyzer {
         readiness: 2,
         meiwaAlignment: 2
       }
+    };
+  }
+
+  // ヘルパーメソッド群
+  private extractKeyPoints(text: string): string[] {
+    const keywords = ['なぜなら', 'たとえば', '具体的には', 'つまり', 'その結果'];
+    return keywords.filter(keyword => text.includes(keyword));
+  }
+
+  private evaluateStrength(text: string): number {
+    let score = 1;
+    if (text.length > 50) score++;
+    if (text.includes('具体的') || text.includes('体験')) score++;
+    if (text.includes('理由') || text.includes('きっかけ')) score++;
+    if (text.includes('感じ') || text.includes('思っ')) score++;
+    return Math.min(score, 5);
+  }
+
+  private evaluateDepth(text: string): number {
+    let score = 1;
+    if (text.length > 100) score++;
+    if (text.includes('方法') || text.includes('やり方')) score++;
+    if (text.includes('結果') || text.includes('わかっ')) score++;
+    if (text.includes('課題') || text.includes('問題')) score++;
+    if (text.includes('改善') || text.includes('工夫')) score++;
+    return Math.min(score, 5);
+  }
+
+  private hasSocialConnection(text: string): boolean {
+    const socialKeywords = ['社会', '地域', '環境', '人々', 'みんな', '世界', '未来'];
+    return socialKeywords.some(keyword => text.includes(keyword));
+  }
+
+  private extractMethodology(text: string): string[] {
+    const methods = ['観察', '実験', '調査', '測定', '比較', '分析', 'インタビュー', 'アンケート'];
+    return methods.filter(method => text.includes(method));
+  }
+
+  private extractAspirations(text: string): string[] {
+    const aspirations = ['学習', '友達', '部活', '探究', '研究', '勉強'];
+    return aspirations.filter(aspiration => text.includes(aspiration));
+  }
+
+  private evaluateFeasibility(text: string): number {
+    let score = 2;
+    if (text.includes('具体的') || text.includes('計画')) score++;
+    if (text.includes('頑張り') || text.includes('努力')) score++;
+    if (text.includes('目標') || text.includes('目指')) score++;
+    return Math.min(score, 5);
+  }
+
+  private extractGoals(text: string): string[] {
+    const goals = ['職業', '仕事', '研究者', '貢献', '役立', '解決'];
+    return goals.filter(goal => text.includes(goal));
+  }
+
+  private evaluateConnection(futureText: string, researchText: string): number {
+    let score = 1;
+    const researchTopic = EssayProcessor.extractResearchTopic(researchText);
+    if (futureText.includes(researchTopic)) score += 2;
+    if (futureText.includes('探究') || futureText.includes('研究')) score++;
+    if (futureText.includes('活かし') || futureText.includes('続け')) score++;
+    return Math.min(score, 5);
+  }
+
+  private generateSuggestions(text: string, type: string): string[] {
+    const suggestions: string[] = [];
+    
+    if (text.length < 50) {
+      suggestions.push('もう少し詳しく説明しましょう');
+    }
+    
+    switch (type) {
+      case 'motivation':
+        if (!text.includes('なぜ') && !text.includes('理由')) {
+          suggestions.push('志望する理由をより明確にしましょう');
+        }
+        break;
+      case 'research':
+        if (!text.includes('方法') && !text.includes('やり方')) {
+          suggestions.push('研究方法を具体的に説明しましょう');
+        }
+        break;
+      case 'schoolLife':
+        if (!text.includes('目標') && !text.includes('頑張り')) {
+          suggestions.push('学校生活での具体的な目標を設定しましょう');
+        }
+        break;
+      case 'future':
+        if (!text.includes('職業') && !text.includes('仕事')) {
+          suggestions.push('将来の職業や夢を具体的に考えましょう');
+        }
+        break;
+    }
+    
+    return suggestions;
+  }
+
+  private calculateOverallScore(analysis: EssayAnalysis): {
+    total: number;
+    readiness: number;
+    meiwaAlignment: number;
+  } {
+    const total = (
+      analysis.motivation.strength +
+      analysis.research.depth +
+      analysis.schoolLife.feasibility +
+      analysis.future.connection
+    ) / 4;
+
+    const readiness = analysis.research.depth > 3 ? 4 : 3;
+    const meiwaAlignment = analysis.research.socialConnection ? 4 : 3;
+
+    return {
+      total: Math.round(total),
+      readiness: Math.round(readiness),
+      meiwaAlignment: Math.round(meiwaAlignment)
     };
   }
 }

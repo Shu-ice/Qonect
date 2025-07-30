@@ -105,38 +105,80 @@ export function EssayUploader({
     return 'PDF処理機能は実装中です。テキスト入力をご利用ください。';
   };
 
-  // 画像OCR処理（Tesseract.js使用想定）
+  // 画像OCR処理（新しいAPIエンドポイント使用）
   const extractTextFromImage = async (file: File): Promise<string> => {
-    // 実装予定: Tesseract.js integration
-    return '画像OCR機能は実装中です。テキスト入力をご利用ください。';
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/ocr/handwriting', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('OCR processing failed');
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.result?.extractedText) {
+        return result.result.extractedText;
+      } else {
+        throw new Error('No text extracted from image');
+      }
+    } catch (error) {
+      console.error('Image OCR error:', error);
+      throw new Error('画像からのテキスト抽出に失敗しました。テキスト入力をご利用ください。');
+    }
   };
 
-  // AI解析処理（新しい志願理由書処理システム統合）
+  // AI解析処理（新しいAPIエンドポイント使用）
   const analyzeEssayContent = async (text: string): Promise<EssaySection> => {
     try {
-      // AI統合分析を実行
-      const analysis: EssayAnalysis = await AIEssayAnalyzer.analyzeWithAI(text);
+      // まず構造分析でEssaySectionを作成
+      const sections = EssayProcessor.analyzeEssayStructure(text);
       
-      // EssaySectionフォーマットに変換
       const essaySection: EssaySection = {
-        motivation: analysis.motivation.content || '志望動機が検出されませんでした。',
-        research: analysis.research.content || '探究活動の記述が検出されませんでした。',
-        schoolLife: analysis.schoolLife.content || '学校生活の抱負が検出されませんでした。',
-        future: analysis.future.content || '将来の目標が検出されませんでした。'
+        motivation: sections.motivation || text.substring(0, Math.min(200, text.length)),
+        research: sections.research || '探究活動の詳細を記載してください。',
+        schoolLife: sections.schoolLife || '学校生活への抱負を記載してください。',
+        future: sections.future || '将来の目標を記載してください。'
       };
-      
-      // 詳細分析結果をコンソールに出力（デバッグ用）
-      console.log('志願理由書分析結果:', {
-        analysis,
-        meiwaReadiness: EssayProcessor.analyzeMeiwaReadiness(analysis),
-        interviewKeywords: EssayProcessor.extractInterviewKeywords(analysis)
+
+      // サーバーサイドでAI分析を実行
+      const response = await fetch('/api/essay/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          essayContent: essaySection,
+          ocrResult: null,
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error('Server-side analysis failed');
+      }
+
+      const result = await response.json();
       
-      // 分析結果も一緒に返す
-      setAnalysisResult(essaySection);
-      onEssayAnalyzed(essaySection, analysis);
-      
-      return essaySection;
+      if (result.success && result.analysis) {
+        // 分析結果をログ出力
+        console.log('志願理由書分析結果:', {
+          essayId: result.essayId,
+          analysis: result.analysis,
+          characterCount: result.characterCount,
+        });
+        
+        setAnalysisResult(essaySection);
+        onEssayAnalyzed(essaySection, result.analysis);
+        
+        return essaySection;
+      } else {
+        throw new Error('Analysis failed');
+      }
       
     } catch (error) {
       console.error('AI分析エラー:', error);

@@ -79,11 +79,11 @@ export const authOptions: NextAuthOptions = {
             studentName: user.studentName,
             grade: user.grade,
             targetSchoolId: user.targetSchoolId,
-            targetSchoolName: user.targetSchool.name,
-            parentEmail: user.parentEmail,
+            targetSchoolName: user.targetSchool?.name || '',
+            parentEmail: user.parentEmail || undefined,
             parentConsent: user.parentConsent,
             accessibilitySettings: user.accessibilitySettings as any,
-            preferredMascot: user.preferredMascot,
+            preferredMascot: user.preferredMascot || undefined,
           };
         } catch (error) {
           console.error('Authentication error:', error);

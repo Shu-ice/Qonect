@@ -20,6 +20,11 @@ const cardVariants = cva(
           'bg-white shadow-premium border border-premium-200',
           'hover:shadow-premium-lg hover:-translate-y-1',
         ],
+        outline: [
+          'bg-white border-2 border-primary-200',
+          'hover:border-primary-300 hover:shadow-md hover:-translate-y-0.5',
+          'transition-all duration-300',
+        ],
         elevated: [
           'bg-white shadow-premium-lg border border-premium-100',
           'hover:shadow-premium-xl hover:-translate-y-2',
