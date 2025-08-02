@@ -15,6 +15,7 @@ interface EssayContent {
   research: string;
   schoolLife: string;
   future: string;
+  inquiryLearning: string; // 探究学習の実績・経験（300字程度）
 }
 
 interface Message {
@@ -54,7 +55,8 @@ export default function InterviewPage() {
         motivation: '明和高校附属中学校の探究学習に興味があります。',
         research: '環境問題について研究したいと思っています。',
         schoolLife: '部活動と勉強を両立したいです。',
-        future: '将来は環境科学者になりたいです。'
+        future: '将来は環境科学者になりたいです。',
+        inquiryLearning: '小学4年生から学校の環境委員会で校内緑化活動に取り組み、植物の育成過程を観察記録しています。特にメダカの水槽管理では水質と生態の関係性について探究し、pH値の変化が及ぼす影響を継続的に調べています。'
       };
 
       setEssayContent(demoEssay);
@@ -92,7 +94,8 @@ export default function InterviewPage() {
         motivation: latestEssay.motivation || '',
         research: latestEssay.research || '',
         schoolLife: latestEssay.schoolLife || '',
-        future: latestEssay.future || ''
+        future: latestEssay.future || '',
+        inquiryLearning: latestEssay.inquiryLearning || '探究学習の経験をここに記載してください。'
       });
 
     } catch (error) {

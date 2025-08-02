@@ -8,7 +8,7 @@
  */
 
 // AI関連モジュールの遅延読み込み
-export const loadAIModule = () => import('@/lib/ai-clients');
+export const loadAIModule = () => import('@/lib/ai/adapter');
 export const loadRealtimeEvaluation = () => import('@/lib/realtime-evaluation');
 export const loadMeiwaAIEngine = () => import('@/lib/meiwa-ai-engine');
 export const loadMeiwaAIService = () => import('@/lib/meiwa-ai-service');

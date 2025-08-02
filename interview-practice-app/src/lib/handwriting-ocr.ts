@@ -4,7 +4,7 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { multiAI } from './ai-clients';
+import { multiAI } from './ai/adapter';
 
 export interface HandwritingOCRResult {
   recognizedText: string;

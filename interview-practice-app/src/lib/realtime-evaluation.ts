@@ -3,7 +3,7 @@
  * 面接中の発言をリアルタイムで分析し、即座にフィードバックを提供
  */
 
-import { multiAI } from './ai-clients';
+import { multiAI } from './ai/adapter';
 import { MeiwaResearchEvaluation } from '@/types/meiwa-evaluation';
 
 export interface RealtimeAnalysis {
@@ -161,7 +161,7 @@ export class RealtimeEvaluationEngine {
 }`;
 
     try {
-      const response = await multiAI.generateWithFallback(prompt, '', 'gemini', {
+      const response = await multiAI.generateWithTripleAI(prompt, '', {
         operation: 'evaluation'
       });
 

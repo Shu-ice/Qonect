@@ -1,0 +1,11 @@
+{
+  "name": "interview-practice-app",
+  "description": "愛知県の中高一貫校（明和中など）入試の二次試験で行われる面接（15分くらい）の練習ができるチャットアプリを作りたい。ユーザーが「志願理由書」をコピペ、またはpdfなどではりつけると、その内容をふまえたリフレクション面接が行われる。入力は音声入力メインでキーボード入力も併用。",
+  "created": "2025-07-25",
+  "phases": {
+    "requirements": true,
+    "design": true,
+    "tasks": true
+  },
+  "status": "initialized"
+}

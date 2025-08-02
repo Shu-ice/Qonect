@@ -3,7 +3,7 @@
  * 実際のAI APIを使用した評価システム
  */
 
-import { multiAI } from './ai-clients';
+import { multiAI } from './ai/adapter';
 import {
   MeiwaResearchEvaluation,
   MeiwaQuestion,
