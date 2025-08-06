@@ -81,7 +81,7 @@ export default function HomePage() {
               transition={{ delay: 0.6, duration: 0.8 }}
               className="flex flex-col sm:flex-row gap-4 justify-center items-center"
             >
-              <Link href="/essay">
+              <Link href="/dashboard">
                 <motion.button
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
@@ -92,7 +92,7 @@ export default function HomePage() {
                 </motion.button>
               </Link>
               
-              <Link href="/interview">
+              <Link href="/interview-direct">
                 <motion.button
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}

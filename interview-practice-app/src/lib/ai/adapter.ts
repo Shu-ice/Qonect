@@ -103,16 +103,17 @@ export const multiAI = {
       };
     } catch (error) {
       console.error('Gemini API エラー:', error);
-      // フォールバック質問を返す
-      if (prompt.includes('交通手段')) {
-        return {
-          content: 'ありがとうございます。こちらまでは何で来られましたか？',
-          provider: 'fallback' as const,
-          model: 'fallback'
-        };
-      }
+      // フォールバック：エラー時もなるべく固定セリフを避ける
+      const fallbackPrompts = [
+        '申し訳ございません。もう一度お答えいただけますでしょうか？',
+        'すみません、少しお時間をいただけますか？',
+        '恐れ入りますが、もう一度お聞かせください。',
+        'ありがとうございます。続けてお話しください。'
+      ];
+      const randomIndex = Math.floor(Math.random() * fallbackPrompts.length);
+      
       return {
-        content: 'ご質問にお答えいただき、ありがとうございます。',
+        content: fallbackPrompts[randomIndex],
         provider: 'fallback' as const,
         model: 'fallback'
       };

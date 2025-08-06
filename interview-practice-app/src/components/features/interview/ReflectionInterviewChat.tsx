@@ -863,55 +863,16 @@ export function ReflectionInterviewChat({
       // 通常の質問継続
       let nextQuestion: string;
       
-      // 🚀 文脈理解型opening段階 - 学生の回答内容を分析
-      if (currentStage === 'opening') {
-        const studentAnswerCount = updatedHistory.filter(m => m.role === 'student').length;
-        const lastStudentAnswer = updatedHistory.filter(m => m.role === 'student').slice(-1)[0]?.content || '';
-        const lastInterviewerQuestion = updatedHistory.filter(m => m.role === 'interviewer').slice(-1)[0]?.content || '';
-        
-        console.log(`🔍 Opening段階: 学生回答数=${studentAnswerCount}, 前回回答="${lastStudentAnswer}"`);
-        
-        if (studentAnswerCount === 1) {
-          // 受検番号・名前の次は必ず交通手段
-          nextQuestion = 'ありがとうございます。こちらまでは何で来られましたか？';
-          console.log('✅ 交通手段質問を設定');
-        } else if (studentAnswerCount === 2) {
-          // 🚀 交通手段の回答を分析して適切な次質問を決定
-          const hasTimeInfo = /\d+分|時間|分ぐらい|分くらい|時間ぐらい|時間くらい/.test(lastStudentAnswer);
-          
-          // 🚀 段階移行はAPI側の厳格な判定に委ねる - クライアント側では質問のみ生成
-          if (hasTimeInfo) {
-            // 既に時間情報が含まれている場合は探究活動に進む（段階移行はAPIが判定）
-            nextQuestion = 'そうですね。それでは、あなたが取り組んでいる探究活動について、1分ほどで説明してください。';
-            console.log('✅ 時間情報検出済み - 探究活動質問を設定（段階移行はAPI判定待ち）');
-          } else {
-            // 時間情報が含まれていない場合のみ時間を聞く
-            nextQuestion = 'そうですか。どれくらい時間がかかりましたか？';
-            console.log('✅ 時間情報なし - 所要時間質問を設定');
-          }
-        } else if (studentAnswerCount >= 3) {
-          // 🚀 重複質問防止 - 既に探究活動の質問をしているかチェック
-          const alreadyAskedAboutInquiry = updatedHistory.some(m => 
-            m.role === 'interviewer' && 
-            m.content.includes('探究活動について') && 
-            m.content.includes('説明してください')
-          );
-          
-          if (alreadyAskedAboutInquiry) {
-            // 既に探究活動の質問をしている場合は、APIに任せる
-            console.log('🔄 探究活動質問済み - APIに質問生成を委任');
-            nextQuestion = await generateNextQuestion(updatedHistory);
-          } else {
-            // まだ探究活動の質問をしていない場合のみ設定
-            nextQuestion = 'それでは、あなたが取り組んでいる探究活動について、1分ほどで説明してください。';
-            console.log('✅ 探究活動質問を設定（段階移行はAPI判定待ち）');
-          }
-        } else {
-          // 0回の場合（開始時）
-          nextQuestion = 'それでは面接を始めます。受検番号と名前を教えてください。';
-          console.log('✅ 面接開始質問を設定');
-        }
+      // 🚀 opening段階も含めて、すべてAPIを通して質問生成（ふざけた回答検出を有効化）
+      const studentAnswerCount = updatedHistory.filter(m => m.role === 'student').length;
+      
+      if (studentAnswerCount === 0) {
+        // 0回の場合（開始時）のみ固定
+        nextQuestion = 'それでは面接を始めます。受検番号と名前を教えてください。';
+        console.log('✅ 面接開始質問を設定');
       } else {
+        // それ以外はすべてAPIを通す（ふざけた回答検出・臨機応変な対応）
+        console.log('🚀 APIを通して質問生成（ふざけた回答検出有効）');
         nextQuestion = await generateNextQuestion(updatedHistory);
       }
       
