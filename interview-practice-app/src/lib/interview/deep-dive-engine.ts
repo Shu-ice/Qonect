@@ -40,6 +40,8 @@ export type QuestionIntent =
   | 'failure_learning'       // 失敗からの学び
   | 'metacognitive_connection' // メタ認知的関連付け
   | 'continuation_willingness' // 継続意欲
+  | 'creation_detail'        // 創作物詳細
+  | 'self_change'            // 自己変化
 
 export type ResponseDepth = 'surface' | 'moderate' | 'deep' | 'profound';
 
@@ -49,6 +51,7 @@ export type MeiwaAxis =
   | 'social_connection'     // 社会・日常連結性
   | 'inquiry_nature'        // 探究性・非正解性
   | 'empathy_communication' // 他者理解・共感可能性
+  | 'empathy'               // 共感・他者理解
   | 'self_transformation'   // 自己変容・成長実感
   | 'original_expression'   // 自分の言葉表現力
 
@@ -73,9 +76,9 @@ export class DeepDiveEngine {
   }
 
   private initializePatterns() {
-    // Hさん（ダンス）パターン
+    // Hさん（ダンス）パターン - 芸術・表現協働系
     this.interviewPatterns.set('artistic_collaborative', {
-      name: 'Hさんパターン（芸術・協働系）',
+      name: '芸術・表現協働系パターン（ダンス、音楽、演劇等）',
       stages: {
         opening: this.createOpeningStage(),
         exploration: this.createArtisticExplorationStage(),
@@ -84,9 +87,9 @@ export class DeepDiveEngine {
       }
     });
 
-    // Tさん（生物飼育）パターン
+    // Tさん（生物飼育）パターン - 科学・実験探究系
     this.interviewPatterns.set('scientific_individual', {
-      name: 'Tさんパターン（科学・個人研究系）',
+      name: '科学・実験探究系パターン（生物、物理、化学等）',
       stages: {
         opening: this.createOpeningStage(),
         exploration: this.createScientificExplorationStage(),
@@ -94,22 +97,75 @@ export class DeepDiveEngine {
         future: this.createScientificFutureStage()
       }
     });
+
+    // 新パターン1: スポーツ・競技分析系
+    this.interviewPatterns.set('sports_competitive', {
+      name: 'スポーツ・競技分析系パターン（個人・団体競技、データ分析等）',
+      stages: {
+        opening: this.createOpeningStage(),
+        exploration: this.createSportsExplorationStage(),
+        metacognition: this.createSportsMetacognitionStage(),
+        future: this.createSportsFutureStage()
+      }
+    });
+
+    // 新パターン2: 社会・課題解決系
+    this.interviewPatterns.set('social_problem_solving', {
+      name: '社会・課題解決系パターン（ボランティア、環境問題、地域活動等）',
+      stages: {
+        opening: this.createOpeningStage(),
+        exploration: this.createSocialExplorationStage(),
+        metacognition: this.createSocialMetacognitionStage(),
+        future: this.createSocialFutureStage()
+      }
+    });
+
+    // 新パターン3: 技術・創造開発系
+    this.interviewPatterns.set('technology_creative', {
+      name: '技術・創造開発系パターン（プログラミング、ロボット、電子工作等）',
+      stages: {
+        opening: this.createOpeningStage(),
+        exploration: this.createTechnologyExplorationStage(),
+        metacognition: this.createTechnologyMetacognitionStage(),
+        future: this.createTechnologyFutureStage()
+      }
+    });
+
+    // 新パターン4: リーダーシップ・合意形成系
+    this.interviewPatterns.set('leadership_consensus', {
+      name: 'リーダーシップ・合意形成系パターン（生徒会、委員長、企画運営等）',
+      stages: {
+        opening: this.createOpeningStage(),
+        exploration: this.createLeadershipExplorationStage(),
+        metacognition: this.createLeadershipMetacognitionStage(),
+        future: this.createLeadershipFutureStage()
+      }
+    });
   }
 
   /**
-   * 探究活動の性質を分析して適切なパターンを選択
+   * 探究活動の性質を分析して適切なパターンを選択（6パターン完全対応）
    */
   public selectInterviewPattern(researchTopic: string): string {
-    const topicAnalysis = this.analyzeResearchTopic(researchTopic);
+    console.log(`🔍 6パターン分析開始: "${researchTopic}"`);
     
-    if (topicAnalysis.isCollaborative && topicAnalysis.isArtistic) {
-      return 'artistic_collaborative';
-    } else if (topicAnalysis.isScientific && topicAnalysis.isIndividual) {
-      return 'scientific_individual';
-    }
+    const analysis = this.analyzeActivityComprehensive(researchTopic);
+    const scores = this.calculatePatternScores(analysis);
     
-    // デフォルトは汎用パターン（基本的にはHさんパターンベース）
-    return 'artistic_collaborative';
+    console.log('📊 パターンスコア分析結果:');
+    Object.entries(scores).forEach(([pattern, score]) => {
+      console.log(`  ${pattern}: ${score.toFixed(2)}`);
+    });
+    
+    // 最高スコアのパターンを選択
+    const selectedPattern = Object.entries(scores).reduce((a, b) => 
+      scores[a[0]] > scores[b[0]] ? a : b
+    )[0];
+    
+    console.log(`✅ 選択されたパターン: ${selectedPattern}`);
+    console.log(`選択理由: ${this.explainPatternSelection(researchTopic, selectedPattern)}`);
+    
+    return selectedPattern;
   }
 
   /**
@@ -207,8 +263,11 @@ export class DeepDiveEngine {
     const studentResponses = conversationHistory.filter(h => h.response && h.response.trim().length > 0);
     console.log(`📊 学生回答数: ${studentResponses.length}/${condition.minDepth} (必要)`);
     
-    if (studentResponses.length < condition.minDepth) {
-      console.log(`❌ 段階移行条件不足: 必要${condition.minDepth}回答, 現在${studentResponses.length}回答`);
+    // exploration段階の最小回答数を7に強化
+    const requiredMinDepth = currentStage === 'exploration' ? Math.max(condition.minDepth, 7) : condition.minDepth;
+    
+    if (studentResponses.length < requiredMinDepth) {
+      console.log(`❌ 段階移行条件不足: 必要${requiredMinDepth}回答, 現在${studentResponses.length}回答`);
       return null;
     }
 
@@ -228,9 +287,42 @@ export class DeepDiveEngine {
     console.log(`✅ 発見要素: [${foundElements.join(', ')}]`);
     console.log(`❌ 不足要素: [${missingElements.join(', ')}]`);
     
-    // 少なくとも60%の要素が満たされていれば移行を許可（柔軟な条件）
+    // 実際の合格者面接基準に合わせた厳格な移行条件
     const satisfactionRate = foundElements.length / condition.requiredElements.length;
-    const requiredSatisfactionRate = 0.6; // 60%
+    let requiredSatisfactionRate = 0.8; // 80%（より厳格）
+    
+    // exploration段階からの移行は特に厳格に（7-9層の深掘り完了が必要）
+    if (currentStage === 'exploration') {
+      requiredSatisfactionRate = 0.9; // 90%
+      
+      // 深掘り層数の厳格化（実際の合格者面接基準）
+      const minimumDeepDiveLayers = 7;  // 5から7に強化
+      if (studentResponses.length < minimumDeepDiveLayers) {
+        console.log(`❌ exploration段階移行条件不足: 深掘り不足 ${studentResponses.length}/${minimumDeepDiveLayers}層以上 必要`);
+        return null;
+      }
+      
+      // さらに、探究活動の核心要素が十分に語られているかチェック
+      const responsesText = studentResponses.map(h => h.response).join(' ');
+      const coreInquiryElements = [
+        '困難|大変|失敗|うまくいかな|課題',  // 困難体験
+        '続け|継続|年間|毎日|ずっと',      // 継続性
+        '発見|気づ|わかっ|学ん|新し',      // 学び・発見
+        '方法|やり方|進め|調べ|記録'       // プロセス
+      ];
+      
+      let coreElementCount = 0;
+      for (const element of coreInquiryElements) {
+        if (new RegExp(element).test(responsesText)) {
+          coreElementCount++;
+        }
+      }
+      
+      if (coreElementCount < 3) {
+        console.log(`❌ exploration段階移行条件不足: 核心要素不足 ${coreElementCount}/4要素`);
+        return null;
+      }
+    }
     
     if (satisfactionRate < requiredSatisfactionRate) {
       console.log(`❌ 段階移行条件不足: 満足度${Math.round(satisfactionRate * 100)}% < 必要${Math.round(requiredSatisfactionRate * 100)}%`);
@@ -297,8 +389,8 @@ export class DeepDiveEngine {
           guidanceForAI: {
             topic: '所要時間の確認',
             style: 'friendly',
-            elements: ['時間を尋ねる'],
-            context: '前の回答（交通手段）を踏まえた自然な流れ。相槌も含めて文脈に応じた質問をする'
+            elements: ['時間を尋ねる', '前回答との整合性確認'],
+            context: '🚀 重要：前の回答に時間情報（30分、1時間等）が既に含まれている場合は時間を聞き返さず、自然な相槌で次の話題に進む。含まれていない場合のみ時間を尋ねる。'
           }
         }
       ],
@@ -352,60 +444,10 @@ export class DeepDiveEngine {
             context: '前の回答（探究活動の説明）を踏まえ、具体的なきっかけや始まりを深掘りする'
           }
         },
-        {
-          id: 'art_3',
-          text: 'メンバーは何人くらいですか？',
-          intent: 'collaboration_detail',
-          evaluationFocus: 'empathy_communication',
-          expectedDepth: 'moderate',
-          followUpTriggers: [
-            {
-              condition: '複数|チーム|グループ|人',
-              nextQuestionId: 'art_4',
-              depthIncrease: 1
-            }
-          ]
-        },
-        {
-          id: 'art_4',
-          text: 'みんなの意見が対立したときはありませんか？',
-          intent: 'difficulty_probing',
-          evaluationFocus: 'empathy_communication',
-          expectedDepth: 'deep',
-          followUpTriggers: [
-            {
-              condition: 'ある|対立|違い|もめ',
-              nextQuestionId: 'art_5',
-              depthIncrease: 1
-            }
-          ]
-        },
-        {
-          id: 'art_5',
-          text: 'そのときはどうしましたか？',
-          intent: 'solution_process',
-          evaluationFocus: 'empathy_communication',
-          expectedDepth: 'deep',
-          followUpTriggers: [
-            {
-              condition: '話し合い|相談|解決|工夫',
-              nextQuestionId: 'art_6',
-              depthIncrease: 1
-            }
-          ]
-        },
-        {
-          id: 'art_6',
-          text: '話し合いの場をうまく作るために、何か工夫していることはありますか？',
-          intent: 'solution_process',
-          evaluationFocus: 'empathy_communication',
-          expectedDepth: 'profound',
-          followUpTriggers: []
-        }
       ],
       transitionCondition: {
-        minDepth: 5,
-        requiredElements: ['きっかけ', '協働体験', '困難', '解決策'],
+        minDepth: 7,  // 5から7に強化
+        requiredElements: ['きっかけ', '協働体験', '困難', '解決策', '継続意欲', '学び・発見'],
         evaluatedAxes: ['genuine_interest', 'empathy_communication', 'self_transformation']
       }
     };
@@ -430,8 +472,8 @@ export class DeepDiveEngine {
           guidanceForAI: {
             topic: '探究活動の概要説明（科学・個人研究系）',
             style: 'encouraging',
-            elements: ['1分程度で', '探究活動について', '整理時間の提案'],
-            context: '科学・個人研究系の場合は、整理時間を明示的に提案する。前の質問への相槌も含めて自然な流れを作る'
+            elements: ['1分程度で', '探究活動について', '整理時間の柔軟な提案'],
+            context: '科学・個人研究系では整理時間が必要な場合が多い。「整理する時間が少しほしいようなら差し上げます」のような柔軟な提案をする。前の質問への相槌も含めて自然な流れを作る'
           }
         },
         {
@@ -449,8 +491,8 @@ export class DeepDiveEngine {
           guidanceForAI: {
             topic: '探究活動での困難や課題（科学・個人研究系）',
             style: 'friendly',
-            elements: ['困ったこと', '大変だったこと', '失敗経験'],
-            context: 'メダカや植物など生き物・植物関連の具体的な困難を自然に引き出す。前の回答内容に触れながら質問する'
+            elements: ['具体的な困難体験', '失敗の詳細', '予想外の出来事'],
+            context: '実際の合格者面接レベルの具体性を求める。「〇〇が死んでしまった時」「植物が枯れた時」など具体的な失敗体験を引き出し、その時の気持ちや対応を詳しく聞く'
           }
         },
         {
@@ -532,8 +574,8 @@ export class DeepDiveEngine {
         }
       ],
       transitionCondition: {
-        minDepth: 6,
-        requiredElements: ['困難体験', '情報収集', '失敗', '再挑戦'],
+        minDepth: 7, // より厳格に（実際の合格者面接は7-9層）
+        requiredElements: ['困難体験', '情報収集', '失敗', '再挑戦', 'きっかけ'],
         evaluatedAxes: ['genuine_interest', 'inquiry_nature', 'self_transformation', 'social_connection']
       }
     };
@@ -544,11 +586,16 @@ export class DeepDiveEngine {
       questions: [
         {
           id: 'art_meta_1',
-          text: 'ダンスと探究活動で似ているところはありますか？',
           intent: 'metacognitive_connection',
           evaluationFocus: 'inquiry_nature',
           expectedDepth: 'deep',
-          followUpTriggers: []
+          followUpTriggers: [],
+          guidanceForAI: {
+            topic: '芸術活動と探究活動の共通点',
+            style: 'encouraging',
+            elements: ['答えがない', '自分なりの答え', '試行錘誤'],
+            context: 'ダンスや音楽などの芸術活動と探究学習の共通点を聞く。"正解がない"という点に気づかせる'
+          }
         }
       ],
       transitionCondition: {
@@ -564,11 +611,16 @@ export class DeepDiveEngine {
       questions: [
         {
           id: 'sci_meta_1',
-          text: 'この探究活動を通して、あなた自身がどのように変わったと思いますか？',
           intent: 'metacognitive_connection',
           evaluationFocus: 'self_transformation',
           expectedDepth: 'deep',
-          followUpTriggers: []
+          followUpTriggers: [],
+          guidanceForAI: {
+            topic: '探究活動を通した自己変化',
+            style: 'encouraging',
+            elements: ['成長', '変化', '新たな気づき'],
+            context: '生き物飼育や植物栽培等を通して、自分自身がどう変わったかを深く聞く。人間的成長を確認'
+          }
         }
       ],
       transitionCondition: {
@@ -584,11 +636,16 @@ export class DeepDiveEngine {
       questions: [
         {
           id: 'art_future_1',
-          text: 'これからも続けていきたいと思いますか？',
           intent: 'continuation_willingness',
           evaluationFocus: 'genuine_interest',
           expectedDepth: 'moderate',
-          followUpTriggers: []
+          followUpTriggers: [],
+          guidanceForAI: {
+            topic: '芸術活動の将来展望',
+            style: 'encouraging',
+            elements: ['中学での継続', '新たな挑戦', '夢や目標'],
+            context: '明和中学校でも芸術活動を続けたいか、新たな分野への挑戦、将来の夢等を聞く'
+          }
         }
       ],
       transitionCondition: {
@@ -604,11 +661,16 @@ export class DeepDiveEngine {
       questions: [
         {
           id: 'sci_future_1',
-          text: 'まだまだ続けていきたいと思いますか？',
           intent: 'continuation_willingness',
           evaluationFocus: 'genuine_interest',
           expectedDepth: 'moderate',
-          followUpTriggers: []
+          followUpTriggers: [],
+          guidanceForAI: {
+            topic: '科学探究の将来展望',
+            style: 'encouraging',
+            elements: ['中学での継続', '更なる探究', '将来の研究'],
+            context: '明和中学校でも生き物や科学の研究を続けたいか、新たな研究テーマ、将来の夢等を聞く'
+          }
         }
       ],
       transitionCondition: {
@@ -728,7 +790,7 @@ export class DeepDiveEngine {
   ): DeepDiveQuestion | null {
     if (conversationHistory.length === 0) return null;
     const lastQuestion = conversationHistory[conversationHistory.length - 1].question;
-    return questionChain.questions.find(q => q.text === lastQuestion) || null;
+    return questionChain.questions.find(q => q.id === lastQuestion) || null;
   }
 
   private checkFollowUpTriggers(
@@ -760,7 +822,7 @@ export class DeepDiveEngine {
     // 使用済みの質問を除外
     const usedQuestions = conversationHistory.map(h => h.question);
     const availableQuestions = questionChain.questions.filter(q => 
-      !usedQuestions.includes(q.text)
+      !usedQuestions.includes(q.id)
     );
     
     console.log(`📋 利用可能質問数: ${availableQuestions.length}/${questionChain.questions.length}`);
@@ -794,7 +856,7 @@ export class DeepDiveEngine {
   ): DeepDiveQuestion | null {
     // まだ出していない、より深い質問を探す
     const usedIntents = conversationHistory.map(h => 
-      questionChain.questions.find(q => q.text === h.question)?.intent
+      questionChain.questions.find(q => q.id === h.question)?.intent
     ).filter(Boolean);
 
     return questionChain.questions.find(q => 
@@ -808,7 +870,7 @@ export class DeepDiveEngine {
     conversationHistory: Array<{question: string, response: string}>
   ): DeepDiveQuestion | null {
     const usedIntents = conversationHistory.map(h => 
-      questionChain.questions.find(q => q.text === h.question)?.intent
+      questionChain.questions.find(q => q.id === h.question)?.intent
     ).filter(Boolean);
 
     return questionChain.questions.find(q => !usedIntents.includes(q.intent)) || null;
@@ -849,6 +911,809 @@ export class DeepDiveEngine {
     // 実際の実装では、より精密な質問意図マッチングが必要
     return false;
   }
+
+  /**
+   * 包括的な活動分析（6パターン対応）
+   */
+  private analyzeActivityComprehensive(activity: string): ActivityAnalysis {
+    return {
+      // スポーツ・競技系指標
+      sportsCompetitive: this.calculateSportsScore(activity),
+      
+      // 芸術・表現協働系指標
+      artisticCollaborative: this.calculateArtisticScore(activity),
+      
+      // 科学・実験探究系指標
+      scientificIndividual: this.calculateScientificScore(activity),
+      
+      // 社会・課題解決系指標
+      socialProblemSolving: this.calculateSocialScore(activity),
+      
+      // 技術・創造開発系指標
+      technologyCreative: this.calculateTechnologyScore(activity),
+      
+      // リーダーシップ・合意形成系指標
+      leadershipConsensus: this.calculateLeadershipScore(activity)
+    };
+  }
+
+  private calculateSportsScore(activity: string): number {
+    let score = 0;
+    
+    // 競技名キーワード
+    const sportsKeywords = /サッカー|野球|バスケ|バレー|テニス|水泳|陸上|体操|柔道|剣道|卓球|バドミントン|ソフトボール|ハンドボール|ラグビー|競技|大会|試合|練習|トレーニング/.test(activity);
+    if (sportsKeywords) score += 4;
+    
+    // データ・記録分析
+    const dataAnalysis = /記録|タイム|スコア|データ|分析|統計|測定|向上|改善/.test(activity);
+    if (dataAnalysis) score += 3;
+    
+    // チーム・個人競技特徴
+    const teamIndividual = /チーム|個人|競争|勝負|ライバル|仲間|連携|協力/.test(activity);
+    if (teamIndividual) score += 2;
+    
+    // トレーニング・努力
+    const training = /毎日|継続|努力|集中|精神|メンタル|技術|フォーム|戦術/.test(activity);
+    if (training) score += 2;
+    
+    return Math.min(score, 10); // 最大10点
+  }
+
+  private calculateArtisticScore(activity: string): number {
+    let score = 0;
+    
+    // 芸術分野キーワード
+    const artisticKeywords = /ダンス|音楽|演劇|美術|絵画|工作|歌|楽器|合唱|吹奏楽|創作|表現|アート|デザイン/.test(activity);
+    if (artisticKeywords) score += 4;
+    
+    // 協働・チーム活動
+    const collaboration = /チーム|グループ|みんな|仲間|一緒|協力|合わせる|練習|発表/.test(activity);
+    if (collaboration) score += 3;
+    
+    // 表現・発表
+    const expression = /発表|披露|見せる|観客|舞台|コンサート|展示|作品|完成/.test(activity);
+    if (expression) score += 2;
+    
+    // 創造・感性
+    const creativity = /創造|感性|想像|オリジナル|工夫|アイデア|表現|美しい/.test(activity);
+    if (creativity) score += 1;
+    
+    return Math.min(score, 10);
+  }
+
+  private calculateScientificScore(activity: string): number {
+    let score = 0;
+    
+    // 生物・科学キーワード
+    const scientificKeywords = /生き物|植物|動物|実験|観察|研究|調査|分析|データ|測定|記録|pH|水質|温度|成長|変化|仮説|検証/.test(activity);
+    if (scientificKeywords) score += 4;
+    
+    // 個人研究特徴
+    const individualResearch = /一人|個人|自分で|独自|継続|毎日|記録|観察|データ/.test(activity);
+    if (individualResearch) score += 3;
+    
+    // 科学的手法
+    const scientificMethod = /比較|実験|仮説|結果|考察|原因|理由|なぜ|どうして/.test(activity);
+    if (scientificMethod) score += 2;
+    
+    // 探究心
+    const inquiry = /不思議|疑問|知りたい|調べ|探究|発見|気づき/.test(activity);
+    if (inquiry) score += 1;
+    
+    return Math.min(score, 10);
+  }
+
+  private calculateSocialScore(activity: string): number {
+    let score = 0;
+    
+    // 社会問題・ボランティア
+    const socialKeywords = /ボランティア|地域|社会|環境|問題|課題|解決|改善|支援|協力|奉仕|福祉|高齢者|子ども|障害|貧困|平和|人権|SDGs/.test(activity);
+    if (socialKeywords) score += 4;
+    
+    // 問題意識・課題解決
+    const problemSolving = /問題|課題|困っ|大変|改善|解決|工夫|提案|働きかけ|変える/.test(activity);
+    if (problemSolving) score += 3;
+    
+    // 社会への影響
+    const socialImpact = /みんな|社会|地域|学校|影響|効果|結果|成果|変化/.test(activity);
+    if (socialImpact) score += 2;
+    
+    // 継続性・活動
+    const continuity = /続け|継続|活動|取り組み|プロジェクト|キャンペーン/.test(activity);
+    if (continuity) score += 1;
+    
+    return Math.min(score, 10);
+  }
+
+  private calculateTechnologyScore(activity: string): number {
+    let score = 0;
+    
+    // 技術・プログラミング
+    const techKeywords = /プログラミング|アプリ|ゲーム|ロボット|コンピュータ|PC|タブレット|Scratch|Python|HTML|CSS|JavaScript|Arduino|micro:bit|センサー|AI|機械学習/.test(activity);
+    if (techKeywords) score += 4;
+    
+    // 開発・制作
+    const development = /作る|開発|制作|プログラム|システム|ツール|機能|設計|実装/.test(activity);
+    if (development) score += 3;
+    
+    // 問題解決・改善
+    const problemSolving = /解決|改善|便利|効率|自動|楽に|簡単|工夫/.test(activity);
+    if (problemSolving) score += 2;
+    
+    // 学習・探究
+    const learning = /学ぶ|調べる|試す|挑戦|新しい|技術|知識/.test(activity);
+    if (learning) score += 1;
+    
+    return Math.min(score, 10);
+  }
+
+  private calculateLeadershipScore(activity: string): number {
+    let score = 0;
+    
+    // リーダーシップ・役職
+    const leadershipKeywords = /生徒会|児童会|委員長|部長|キャプテン|リーダー|代表|会長|副会長|書記|会計|企画|運営|まとめる|指揮/.test(activity);
+    if (leadershipKeywords) score += 4;
+    
+    // 組織・チーム運営
+    const organization = /チーム|グループ|組織|メンバー|みんな|全校|学年|クラス|運営|管理/.test(activity);
+    if (organization) score += 3;
+    
+    // 意見調整・合意形成
+    const consensus = /話し合い|会議|相談|意見|調整|まとめ|決める|合意|納得|理解/.test(activity);
+    if (consensus) score += 2;
+    
+    // 責任・実行
+    const responsibility = /責任|役割|任せる|頼られる|期待|信頼|実行|やり遂げる/.test(activity);
+    if (responsibility) score += 1;
+    
+    return Math.min(score, 10);
+  }
+
+  private calculatePatternScores(analysis: ActivityAnalysis): Record<string, number> {
+    return {
+      'sports_competitive': analysis.sportsCompetitive,
+      'artistic_collaborative': analysis.artisticCollaborative,
+      'scientific_individual': analysis.scientificIndividual,
+      'social_problem_solving': analysis.socialProblemSolving,
+      'technology_creative': analysis.technologyCreative,
+      'leadership_consensus': analysis.leadershipConsensus
+    };
+  }
+
+  private explainPatternSelection(activity: string, selectedPattern: string): string {
+    const explanations: Record<string, string> = {
+      'sports_competitive': 'スポーツ・競技関連のキーワードと継続的なトレーニング・データ分析の特徴を検出',
+      'artistic_collaborative': '芸術・表現活動と協働・発表の特徴を検出',
+      'scientific_individual': '科学的観察・実験と個人研究の継続性を検出',
+      'social_problem_solving': '社会問題への関心とボランティア・課題解決活動を検出',
+      'technology_creative': 'プログラミング・技術開発と創造的問題解決を検出',
+      'leadership_consensus': 'リーダーシップ・組織運営と合意形成活動を検出'
+    };
+    
+    return explanations[selectedPattern] || '総合的判断により選択';
+  }
+
+  // ===== 新パターン1: スポーツ・競技分析系 =====
+  private createSportsExplorationStage(): StageQuestions {
+    return {
+      questions: [
+        {
+          id: 'sports_1',
+          intent: 'trigger_exploration',
+          evaluationFocus: 'genuine_interest',
+          expectedDepth: 'moderate',
+          preparationTime: 60,
+          followUpTriggers: [
+            {
+              condition: 'サッカー|野球|バスケ|テニス|水泳|陸上|競技|スポーツ',
+              nextQuestionId: 'sports_2',
+              depthIncrease: 1
+            }
+          ],
+          guidanceForAI: {
+            topic: '競技・スポーツ活動の概要説明',
+            style: 'encouraging',
+            elements: ['1分程度で', 'スポーツ活動について', '競技の特徴'],
+            context: 'スポーツ・競技系では継続的な努力と記録向上への取り組みを重視。前の回答への相槌も含めて自然な流れを作る'
+          }
+        },
+        {
+          id: 'sports_2',
+          intent: 'difficulty_probing',
+          evaluationFocus: 'self_transformation',
+          expectedDepth: 'moderate',
+          followUpTriggers: [
+            {
+              condition: '記録|タイム|スコア|負け|うまくいかな|悔し',
+              nextQuestionId: 'sports_3',
+              depthIncrease: 1
+            }
+          ],
+          guidanceForAI: {
+            topic: 'スポーツでの困難・挫折体験',
+            style: 'friendly',
+            elements: ['記録が伸びない', 'チーム内競争', '技術的な壁'],
+            context: 'スポーツ特有の困難（記録停滞、怪我、チーム内競争等）を具体的に引き出す。負けや挫折への向き合い方を聞く'
+          }
+        },
+        {
+          id: 'sports_3',
+          intent: 'solution_process',
+          evaluationFocus: 'self_transformation',
+          expectedDepth: 'deep',
+          followUpTriggers: [
+            {
+              condition: '練習|トレーニング|コーチ|先生|工夫|改善',
+              nextQuestionId: 'sports_4',
+              depthIncrease: 1
+            }
+          ],
+          guidanceForAI: {
+            topic: '困難克服のための具体的な取り組み',
+            style: 'encouraging',
+            elements: ['練習方法の工夫', 'データ分析', 'メンタル管理'],
+            context: 'スポーツでの問題解決プロセスを詳細に聞く。科学的アプローチ、継続的努力、周囲の支援活用等'
+          }
+        },
+        {
+          id: 'sports_4',
+          intent: 'collaboration_detail',
+          evaluationFocus: 'social_connection',
+          expectedDepth: 'moderate',
+          followUpTriggers: [
+            {
+              condition: 'チーム|仲間|コーチ|個人|一人',
+              nextQuestionId: 'sports_5',
+              depthIncrease: 1
+            }
+          ],
+          guidanceForAI: {
+            topic: 'チーム競技での協力・個人競技での支援者',
+            style: 'friendly',
+            elements: ['チームワーク', '個人の役割', '指導者との関係'],
+            context: 'チーム競技なら連携・役割分担、個人競技なら周囲の支援者について聞く。スポーツにおける人間関係を探る'
+          }
+        },
+        {
+          id: 'sports_5',
+          intent: 'failure_learning',
+          evaluationFocus: 'genuine_interest',
+          expectedDepth: 'deep',
+          followUpTriggers: [],
+          guidanceForAI: {
+            topic: 'スポーツ継続への動機・情熱',
+            style: 'encouraging',
+            elements: ['継続の理由', '競技への愛情', '目標への執念'],
+            context: '挫折があっても続ける理由、競技への情熱、将来の目標等を深く聞く。スポーツ特有の精神力を確認'
+          }
+        }
+      ],
+      transitionCondition: {
+        minDepth: 6,
+        requiredElements: ['困難体験', '練習・努力', '継続意欲', 'チームワーク・支援'],
+        evaluatedAxes: ['genuine_interest', 'self_transformation', 'social_connection']
+      }
+    };
+  }
+
+  private createSportsMetacognitionStage(): StageQuestions {
+    return {
+      questions: [
+        {
+          id: 'sports_meta_1',
+          intent: 'metacognitive_connection',
+          evaluationFocus: 'inquiry_nature',
+          expectedDepth: 'deep',
+          followUpTriggers: [],
+          guidanceForAI: {
+            topic: 'スポーツと探究活動・学習の共通点',
+            style: 'encouraging',
+            elements: ['継続的努力', '目標設定', '改善プロセス'],
+            context: 'スポーツで身につけた力（継続力、目標達成力、チームワーク等）が他の分野にどう活かされているかを探る'
+          }
+        }
+      ],
+      transitionCondition: {
+        minDepth: 1,
+        requiredElements: ['関連性'],
+        evaluatedAxes: ['inquiry_nature']
+      }
+    };
+  }
+
+  private createSportsFutureStage(): StageQuestions {
+    return {
+      questions: [
+        {
+          id: 'sports_future_1',
+          intent: 'continuation_willingness',
+          evaluationFocus: 'genuine_interest',
+          expectedDepth: 'moderate',
+          followUpTriggers: [],
+          guidanceForAI: {
+            topic: 'スポーツ活動の将来展望',
+            style: 'encouraging',
+            elements: ['中学での継続', '新たな目標', '指導者への憧れ'],
+            context: '明和中学校でのスポーツ継続意欲、新たな挑戦への期待、将来の夢等を聞く'
+          }
+        }
+      ],
+      transitionCondition: {
+        minDepth: 1,
+        requiredElements: ['継続意欲'],
+        evaluatedAxes: ['genuine_interest']
+      }
+    };
+  }
+
+  // ===== 新パターン2: 社会・課題解決系 =====
+  private createSocialExplorationStage(): StageQuestions {
+    return {
+      questions: [
+        {
+          id: 'social_1',
+          intent: 'trigger_exploration',
+          evaluationFocus: 'social_connection',
+          expectedDepth: 'moderate',
+          preparationTime: 60,
+          followUpTriggers: [
+            {
+              condition: 'ボランティア|地域|環境|社会|問題|課題',
+              nextQuestionId: 'social_2',
+              depthIncrease: 1
+            }
+          ],
+          guidanceForAI: {
+            topic: '社会課題・ボランティア活動の概要説明',
+            style: 'encouraging',
+            elements: ['1分程度で', '社会活動について', '問題意識の背景'],
+            context: '社会課題解決系では問題発見力と持続的な取り組みを重視。社会への関心の高さを確認'
+          }
+        },
+        {
+          id: 'social_2',
+          intent: 'trigger_exploration', 
+          evaluationFocus: 'genuine_interest',
+          expectedDepth: 'deep',
+          followUpTriggers: [
+            {
+              condition: 'きっかけ|出会い|体験|知った|気づい',
+              nextQuestionId: 'social_3',
+              depthIncrease: 1
+            }
+          ],
+          guidanceForAI: {
+            topic: '社会問題への関心を持ったきっかけ',
+            style: 'friendly',
+            elements: ['問題との出会い', '体験・体感', '心の動き'],
+            context: '社会課題に関心を持った原体験を詳しく聞く。ニュース、体験、身近な人の影響など具体的なきっかけを探る'
+          }
+        },
+        {
+          id: 'social_3',
+          intent: 'difficulty_probing',
+          evaluationFocus: 'self_transformation',
+          expectedDepth: 'deep',
+          followUpTriggers: [
+            {
+              condition: '大変|困難|難し|理解されな|反対|協力',
+              nextQuestionId: 'social_4',
+              depthIncrease: 1
+            }
+          ],
+          guidanceForAI: {
+            topic: '社会活動での困難・障壁',
+            style: 'encouraging',
+            elements: ['周囲の理解不足', '資源・時間の制約', '成果の見えにくさ'],
+            context: '社会活動特有の困難（理解されない、成果が見えない、継続の難しさ等）を具体的に聞く'
+          }
+        },
+        {
+          id: 'social_4',
+          intent: 'information_gathering',
+          evaluationFocus: 'inquiry_nature',
+          expectedDepth: 'deep',
+          followUpTriggers: [
+            {
+              condition: '調べ|研究|データ|統計|専門家|本',
+              nextQuestionId: 'social_5',
+              depthIncrease: 1
+            }
+          ],
+          guidanceForAI: {
+            topic: '社会課題についての情報収集・学習',
+            style: 'friendly',
+            elements: ['問題の調査方法', '専門知識の習得', '現状把握'],
+            context: '社会課題の背景や解決策について、どのように情報を集め学習したかを詳しく聞く'
+          }
+        },
+        {
+          id: 'social_5',
+          intent: 'collaboration_detail',
+          evaluationFocus: 'social_connection',
+          expectedDepth: 'deep',
+          followUpTriggers: [],
+          guidanceForAI: {
+            topic: '継続的な社会活動への意欲・使命感',
+            style: 'encouraging',
+            elements: ['社会への責任感', '将来への使命', '継続の決意'],
+            context: '社会課題解決への長期的なコミットメント、将来の社会貢献への意欲を確認'
+          }
+        }
+      ],
+      transitionCondition: {
+        minDepth: 6,
+        requiredElements: ['問題意識', 'きっかけ', '困難体験', '学習・調査', '継続意欲'],
+        evaluatedAxes: ['social_connection', 'genuine_interest', 'inquiry_nature']
+      }
+    };
+  }
+
+  private createSocialMetacognitionStage(): StageQuestions {
+    return {
+      questions: [
+        {
+          id: 'social_meta_1',
+          intent: 'metacognitive_connection',
+          evaluationFocus: 'social_connection',
+          expectedDepth: 'deep',
+          followUpTriggers: [],
+          guidanceForAI: {
+            topic: '社会活動と探究学習の共通点',
+            style: 'encouraging',
+            elements: ['問題発見力', '多角的思考', '持続的行動'],
+            context: '社会課題解決で身につけた力（批判的思考、共感力、行動力等）が他の学習にどう活かされているかを探る'
+          }
+        }
+      ],
+      transitionCondition: {
+        minDepth: 1,
+        requiredElements: ['関連性'],
+        evaluatedAxes: ['social_connection']
+      }
+    };
+  }
+
+  private createSocialFutureStage(): StageQuestions {
+    return {
+      questions: [
+        {
+          id: 'social_future_1',
+          intent: 'continuation_willingness',
+          evaluationFocus: 'social_connection',
+          expectedDepth: 'moderate',
+          followUpTriggers: [],
+          guidanceForAI: {
+            topic: '社会課題解決の将来展望',
+            style: 'encouraging',
+            elements: ['中学での継続', 'より大きな活動', '将来の職業'],
+            context: '明和中学校での社会活動継続、将来の社会貢献への意欲、関連する職業への関心等を聞く'
+          }
+        }
+      ],
+      transitionCondition: {
+        minDepth: 1,
+        requiredElements: ['継続意欲'],
+        evaluatedAxes: ['social_connection']
+      }
+    };
+  }
+
+  // ===== 新パターン3: 技術・創造開発系 =====
+  private createTechnologyExplorationStage(): StageQuestions {
+    return {
+      questions: [
+        {
+          id: 'tech_1',
+          intent: 'trigger_exploration',
+          evaluationFocus: 'inquiry_nature',
+          expectedDepth: 'moderate',
+          preparationTime: 60,
+          followUpTriggers: [
+            {
+              condition: 'プログラミング|ロボット|電子工作|アプリ|システム|ゲーム|技術',
+              nextQuestionId: 'tech_2',
+              depthIncrease: 1
+            }
+          ],
+          guidanceForAI: {
+            topic: '技術・プログラミング活動の概要説明',
+            style: 'encouraging',
+            elements: ['1分程度で', '技術活動について', 'きっかけ・動機'],
+            context: '技術創造系では論理的思考力と創造力を重視。技術への関心と継続的学習姿勢を確認'
+          }
+        },
+        {
+          id: 'tech_2',
+          intent: 'trigger_exploration', 
+          evaluationFocus: 'genuine_interest',
+          expectedDepth: 'deep',
+          followUpTriggers: [
+            {
+              condition: 'きっかけ|始め|最初|出会い|体験|興味',
+              nextQuestionId: 'tech_3',
+              depthIncrease: 1
+            }
+          ],
+          guidanceForAI: {
+            topic: '技術に興味を持ったきっかけ',
+            style: 'friendly',
+            elements: ['最初の体験', '発見の瞬間', '心の動き'],
+            context: 'プログラミングやロボット等の技術に関心を持った原体験を詳しく聞く。ゲーム、授業、家族の影響など具体的なきっかけを探る'
+          }
+        },
+        {
+          id: 'tech_3',
+          intent: 'difficulty_probing',
+          evaluationFocus: 'self_transformation',
+          expectedDepth: 'deep',
+          followUpTriggers: [
+            {
+              condition: 'エラー|バグ|うまくいかな|難し|わからな|つまず',
+              nextQuestionId: 'tech_4',
+              depthIncrease: 1
+            }
+          ],
+          guidanceForAI: {
+            topic: '技術学習での困難・挫折体験',
+            style: 'encouraging',
+            elements: ['エラーやバグ', '理解困難', '予想外の問題'],
+            context: '技術学習特有の困難（コードのエラー、理論の理解困難、思い通りに動かない等）を具体的に聞く'
+          }
+        },
+        {
+          id: 'tech_4',
+          intent: 'information_gathering',
+          evaluationFocus: 'inquiry_nature',
+          expectedDepth: 'deep',
+          followUpTriggers: [
+            {
+              condition: '調べ|検索|質問|本|サイト|動画|先生',
+              nextQuestionId: 'tech_5',
+              depthIncrease: 1
+            }
+          ],
+          guidanceForAI: {
+            topic: '技術問題解決のための情報収集',
+            style: 'friendly',
+            elements: ['学習リソース', '質問・相談', 'トライアンドエラー'],
+            context: '技術的な問題にぶつかった時の解決方法、学習方法について詳しく聞く。独学か指導者がいるかも重要'
+          }
+        },
+        {
+          id: 'tech_5',
+          intent: 'creation_detail',
+          evaluationFocus: 'original_expression',
+          expectedDepth: 'deep',
+          followUpTriggers: [],
+          guidanceForAI: {
+            topic: '創作物・成果物への愛着と継続的改善',
+            style: 'encouraging',
+            elements: ['作品への思い', '改善・発展', '他者への共有'],
+            context: '自分で作ったプログラムやロボット等の作品に対する愛着、継続的な改善意欲、他者と共有したい気持ちを確認'
+          }
+        }
+      ],
+      transitionCondition: {
+        minDepth: 6,
+        requiredElements: ['技術活動', 'きっかけ', '困難体験', '学習・調査', '創作・改善'],
+        evaluatedAxes: ['inquiry_nature', 'genuine_interest', 'original_expression']
+      }
+    };
+  }
+
+  private createTechnologyMetacognitionStage(): StageQuestions {
+    return {
+      questions: [
+        {
+          id: 'tech_meta_1',
+          intent: 'metacognitive_connection',
+          evaluationFocus: 'inquiry_nature',
+          expectedDepth: 'deep',
+          followUpTriggers: [],
+          guidanceForAI: {
+            topic: '技術学習と探究活動・他教科学習の共通点',
+            style: 'encouraging',
+            elements: ['論理的思考', '試行錯誤', '創造的問題解決'],
+            context: '技術学習で身につけた力（論理的思考、問題解決力、創造力等）が他の分野にどう活かされているかを探る'
+          }
+        }
+      ],
+      transitionCondition: {
+        minDepth: 1,
+        requiredElements: ['関連性'],
+        evaluatedAxes: ['inquiry_nature']
+      }
+    };
+  }
+
+  private createTechnologyFutureStage(): StageQuestions {
+    return {
+      questions: [
+        {
+          id: 'tech_future_1',
+          intent: 'continuation_willingness',
+          evaluationFocus: 'genuine_interest',
+          expectedDepth: 'moderate',
+          followUpTriggers: [],
+          guidanceForAI: {
+            topic: '技術学習の将来展望',
+            style: 'encouraging',
+            elements: ['中学での継続', '新しい技術への挑戦', '将来の職業'],
+            context: '明和中学校での技術学習継続、新しい技術分野への興味、将来のエンジニア等への憧れを聞く'
+          }
+        }
+      ],
+      transitionCondition: {
+        minDepth: 1,
+        requiredElements: ['継続意欲'],
+        evaluatedAxes: ['genuine_interest']
+      }
+    };
+  }
+
+  // ===== 新パターン4: リーダーシップ・合意形成系 =====
+  private createLeadershipExplorationStage(): StageQuestions {
+    return {
+      questions: [
+        {
+          id: 'leadership_1',
+          intent: 'trigger_exploration',
+          evaluationFocus: 'social_connection',
+          expectedDepth: 'moderate',
+          preparationTime: 60,
+          followUpTriggers: [
+            {
+              condition: '生徒会|委員長|リーダー|代表|まとめ|企画|運営',
+              nextQuestionId: 'leadership_2',
+              depthIncrease: 1
+            }
+          ],
+          guidanceForAI: {
+            topic: 'リーダーシップ・組織運営活動の概要説明',
+            style: 'encouraging',
+            elements: ['1分程度で', 'リーダー経験について', '責任・役割の自覚'],
+            context: 'リーダーシップ系では協調性と責任感を重視。組織をまとめる力と他者への配慮を確認'
+          }
+        },
+        {
+          id: 'leadership_2',
+          intent: 'trigger_exploration', 
+          evaluationFocus: 'social_connection',
+          expectedDepth: 'deep',
+          followUpTriggers: [
+            {
+              condition: 'きっかけ|推薦|立候補|選ば|頼ま|やりたい',
+              nextQuestionId: 'leadership_3',
+              depthIncrease: 1
+            }
+          ],
+          guidanceForAI: {
+            topic: 'リーダーになったきっかけ・動機',
+            style: 'friendly',
+            elements: ['立候補・推薦', '責任感', '貢献したい気持ち'],
+            context: 'リーダーシップを発揮する立場になった経緯を詳しく聞く。自発的か他薦かも重要なポイント'
+          }
+        },
+        {
+          id: 'leadership_3',
+          intent: 'difficulty_probing',
+          evaluationFocus: 'empathy',
+          expectedDepth: 'deep',
+          followUpTriggers: [
+            {
+              condition: '意見|対立|まとまらな|困難|大変|反対',
+              nextQuestionId: 'leadership_4',
+              depthIncrease: 1
+            }
+          ],
+          guidanceForAI: {
+            topic: 'リーダーとしての困難・対立への対処',
+            style: 'encouraging',
+            elements: ['意見の対立', '合意形成の困難', '責任の重さ'],
+            context: 'リーダーシップ特有の困難（意見対立、責任の重さ、板挟み等）を具体的に聞く'
+          }
+        },
+        {
+          id: 'leadership_4',
+          intent: 'collaboration_detail',
+          evaluationFocus: 'empathy',
+          expectedDepth: 'deep',
+          followUpTriggers: [
+            {
+              condition: '話し合い|聞く|意見|調整|妥協|解決',
+              nextQuestionId: 'leadership_5',
+              depthIncrease: 1
+            }
+          ],
+          guidanceForAI: {
+            topic: '合意形成・問題解決のプロセス',
+            style: 'friendly',
+            elements: ['対話重視', '相手の立場理解', 'Win-Win解決'],
+            context: '対立や困難をどのように解決したか、合意形成のプロセスを詳しく聞く。他者への配慮が重要'
+          }
+        },
+        {
+          id: 'leadership_5',
+          intent: 'self_change',
+          evaluationFocus: 'self_transformation',
+          expectedDepth: 'deep',
+          followUpTriggers: [],
+          guidanceForAI: {
+            topic: 'リーダー経験による自己成長',
+            style: 'encouraging',
+            elements: ['責任感の向上', '他者理解', 'コミュニケーション力'],
+            context: 'リーダーとしての経験を通じた自分自身の成長、変化について深く聞く。他者への感謝も重要'
+          }
+        }
+      ],
+      transitionCondition: {
+        minDepth: 6,
+        requiredElements: ['リーダー経験', 'きっかけ', '困難体験', '合意形成', '自己成長'],
+        evaluatedAxes: ['social_connection', 'empathy', 'self_transformation']
+      }
+    };
+  }
+
+  private createLeadershipMetacognitionStage(): StageQuestions {
+    return {
+      questions: [
+        {
+          id: 'leadership_meta_1',
+          intent: 'metacognitive_connection',
+          evaluationFocus: 'social_connection',
+          expectedDepth: 'deep',
+          followUpTriggers: [],
+          guidanceForAI: {
+            topic: 'リーダーシップと探究学習の共通点',
+            style: 'encouraging',
+            elements: ['多面的思考', '他者との協働', '責任感'],
+            context: 'リーダー経験で身につけた力（協調性、責任感、調整力等）が他の学習にどう活かされているかを探る'
+          }
+        }
+      ],
+      transitionCondition: {
+        minDepth: 1,
+        requiredElements: ['関連性'],
+        evaluatedAxes: ['social_connection']
+      }
+    };
+  }
+
+  private createLeadershipFutureStage(): StageQuestions {
+    return {
+      questions: [
+        {
+          id: 'leadership_future_1',
+          intent: 'continuation_willingness',
+          evaluationFocus: 'social_connection',
+          expectedDepth: 'moderate',
+          followUpTriggers: [],
+          guidanceForAI: {
+            topic: 'リーダーシップの将来展望',
+            style: 'encouraging',
+            elements: ['中学でのリーダー継続', '社会貢献', '将来の職業'],
+            context: '明和中学校でのリーダーシップ継続、将来の社会リーダーへの意欲、関連する職業への関心等を聞く'
+          }
+        }
+      ],
+      transitionCondition: {
+        minDepth: 1,
+        requiredElements: ['継続意欲'],
+        evaluatedAxes: ['social_connection']
+      }
+    };
+  }
+}
+
+// 新しい分析インターface
+interface ActivityAnalysis {
+  sportsCompetitive: number;
+  artisticCollaborative: number;
+  scientificIndividual: number;
+  socialProblemSolving: number;
+  technologyCreative: number;
+  leadershipConsensus: number;
 }
 
 // ====== Supporting Interfaces ======

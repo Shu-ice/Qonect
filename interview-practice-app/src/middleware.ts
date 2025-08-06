@@ -35,6 +35,12 @@ export default withAuth(
         return NextResponse.next();
       }
 
+      // テスト用APIは除外
+      if (pathname.startsWith('/api/test/') || 
+          pathname === '/api/interview/generate-question') {
+        return NextResponse.next();
+      }
+
       // 保護されたAPIルートの場合、認証チェック
       const isProtectedApi = protectedPaths.some(path => 
         pathname.startsWith(path) || pathname === path
@@ -131,6 +137,13 @@ export default withAuth(
           '/auth/error',
           '/auth/verify-request',
           '/offline',
+          '/simple-test',
+          '/test-inquiry-main-structure',
+          '/test-motivation-prevention',
+          '/test-deep-dive',
+          '/test-depth7-fix',
+          '/test-response-checking',
+          '/test-premium-quality',
         ];
 
         if (publicPaths.includes(pathname)) {

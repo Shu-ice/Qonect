@@ -55,9 +55,10 @@ export function ReflectionInterviewChat({
   essayContent, 
   onSessionEnd 
 }: ReflectionInterviewChatProps) {
+  console.log('🚨🚨🚨 ReflectionInterviewChat修正版V5（探究活動深掘り徹底強化）がロードされました！🚨🚨🚨');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isListening, setIsListening] = useState(false);
-  const [shouldStartListening, setShouldStartListening] = useState(true); // 音声入力をデフォルトに
+  const [shouldStartListening, setShouldStartListening] = useState(true); // 常時音声入力モード
   const [isThinking, setIsThinking] = useState(false);
   const [typingMessageId, setTypingMessageId] = useState<string | null>(null);
   const [displayedContent, setDisplayedContent] = useState<Map<string, string>>(new Map());
@@ -126,127 +127,126 @@ export function ReflectionInterviewChat({
         console.log('SpeechRecognition constructor:', SpeechRecognition);
         recognitionInstance = new SpeechRecognition();
         console.log('認識インスタンス作成成功');
-      
-      recognitionInstance.continuous = true;
-      recognitionInstance.interimResults = true;
-      recognitionInstance.lang = 'ja-JP';
-      recognitionInstance.maxAlternatives = 1;
-      
-      // より敏感な音声認識設定
-      if ('webkitSpeechRecognition' in window) {
-        (recognitionInstance as any).webkitPersistent = true;
-      }
-      
-      // 音声認識開始時点のテキストを保存
-      let baseText = '';
-      let lastTranscriptLength = 0;
-      
-      recognitionInstance.onstart = () => {
-        console.log('🎤 音声認識開始 - 現在のテキストを保存');
-        console.log('🎤 onstart イベント発火確認');
-        // 最新の状態を取得するために、setCurrentInputのコールバックを使用
-        setCurrentInput(current => {
-          baseText = current;
-          console.log('📌 保存したベーステキスト:', baseText);
-          return current;
-        });
-        lastTranscriptLength = 0;
-      };
-      
-      recognitionInstance.onresult = (event) => {
-        console.log('🎤 音声認識結果 - event.results.length:', event.results.length);
-        let fullTranscript = '';
-        let interimTranscript = '';
         
-        // 各結果の詳細をログ出力
-        for (let i = 0; i < event.results.length; i++) {
-          const result = event.results[i];
-          const transcript = result[0].transcript;
-          const confidence = result[0].confidence;
-          const isFinal = result.isFinal;
-          
-          console.log(`結果[${i}]: "${transcript}" (final: ${isFinal}, confidence: ${confidence})`);
-          
-          if (isFinal) {
-            fullTranscript += transcript;
-          } else {
-            interimTranscript += transcript;
-          }
+        recognitionInstance.continuous = true;
+        recognitionInstance.interimResults = true;
+        recognitionInstance.lang = 'ja-JP';
+        recognitionInstance.maxAlternatives = 1;
+        
+        // より敏感な音声認識設定
+        if ('webkitSpeechRecognition' in window) {
+          (recognitionInstance as any).webkitPersistent = true;
         }
         
-        console.log('📝 確定テキスト（累積）:', `"${fullTranscript}"`);
-        console.log('⏳ 中間テキスト:', `"${interimTranscript}"`);
-        console.log('🏁 ベーステキスト:', `"${baseText}"`);
-        
-        // リアルタイムで中間結果を表示
-        setInterimText(interimTranscript);
-        
-        // 音声認識開始時のテキスト + 音声認識結果（累積）を設定
-        const newFullText = baseText + fullTranscript;
-        console.log('💾 最終結果:', `"${newFullText}"`);
-        setCurrentInput(newFullText);
-        
-        // 次回の比較のために長さを保存
-        lastTranscriptLength = fullTranscript.length;
-      };
+        // 音声認識開始時点のテキストを保存
+        let baseText = '';
+        let lastTranscriptLength = 0;
       
-      recognitionInstance.onerror = (event) => {
-        console.error('🚨 音声認識エラー:', event.error);
-        console.error('🚨 エラーイベント全体:', event);
-        
-        // エラータイプに応じた処理
-        if (event.error === 'no-speech') {
-          // 音声が検出されない場合は継続
-          console.log('🔇 音声が検出されません。待機中...');
-        } else if (event.error === 'audio-capture') {
-          // マイクアクセスエラー
-          console.error('🎤 マイクアクセスエラー');
-          setError('マイクにアクセスできません。マイクの権限を確認してください。');
-          setIsListening(false);
-        } else if (event.error === 'not-allowed') {
-          // 権限がない
-          console.error('🚫 マイク権限エラー');
-          setError('音声認識の権限が必要です。ブラウザの設定を確認してください。');
-          setIsListening(false);
-        } else if (event.error === 'network') {
-          // ネットワークエラー
-          console.error('🌐 ネットワークエラー');
-          setError('ネットワーク接続を確認してください。');
-          setIsListening(false);
-        } else if (event.error === 'aborted') {
-          // 中断された
-          console.log('⏹️ 音声認識が中断されました');
-        } else {
-          // その他のエラー
-          console.warn('⚠️ その他の音声認識エラー:', event.error);
-          setError(`音声認識エラー: ${event.error}`);
-          setIsListening(false);
-        }
-        
-        setInterimText('');
-      };
-      
-      recognitionInstance.onend = () => {
-        console.log('音声認識終了');
-        setInterimText(''); // 音声認識終了時に中間テキストをクリア
-        // baseTextは音声認識再開時に最新の値を取得するため、ここではリセットしない
-        lastTranscriptLength = 0;
-        
-        // 音声認識が予期せず終了した場合の自動再開（リスニング中のみ）
-        if (isListening) {
+        recognitionInstance.onstart = () => {
+          console.log('🎤 音声認識開始 - 現在のテキストを保存');
+          console.log('🎤 onstart イベント発火確認');
+          // 🚀 音声認識開始時にはフォームの現在のテキストを完全にクリア
+          setCurrentInput('');
+          setInterimText('');
+          baseText = '';
+          console.log('📌 ベーステキストを空にリセット:', `"${baseText}"`);
+          lastTranscriptLength = 0;
+          
+          // 🚀 DOM要素も即座にクリア（音声認識開始時）
           setTimeout(() => {
-            try {
-              recognitionInstance.start();
-              console.log('音声認識を自動再開しました');
-            } catch (error) {
-              console.error('音声認識の再開に失敗:', error);
-              setIsListening(false);
-            }
-          }, 300);
-        }
-      };
+            const textareas = document.querySelectorAll('textarea[placeholder*="音声入力"]');
+            textareas.forEach(textarea => {
+              if (textarea instanceof HTMLTextAreaElement) {
+                textarea.value = '';
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+              }
+            });
+          }, 0);
+        };
       
-      setRecognition(recognitionInstance);
+        recognitionInstance.onresult = (event: any) => {
+          console.log('🎤 音声認識結果 - event.results.length:', event.results.length);
+          let fullTranscript = '';
+          let interimTranscript = '';
+          
+          // 各結果の詳細をログ出力
+          for (let i = 0; i < event.results.length; i++) {
+            const result = event.results[i];
+            const transcript = result[0].transcript;
+            const confidence = result[0].confidence;
+            const isFinal = result.isFinal;
+            
+            console.log(`結果[${i}]: "${transcript}" (final: ${isFinal}, confidence: ${confidence})`);
+            
+            if (isFinal) {
+              fullTranscript += transcript;
+            } else {
+              interimTranscript += transcript;
+            }
+          }
+          
+          console.log('📝 確定テキスト（累積）:', `"${fullTranscript}"`);
+          console.log('⏳ 中間テキスト:', `"${interimTranscript}"`);
+          console.log('🏁 ベーステキスト:', `"${baseText}"`);
+          
+          // リアルタイムで中間結果を表示
+          setInterimText(interimTranscript);
+          
+          // 音声認識開始時のテキスト + 音声認識結果（累積）を設定
+          const newFullText = baseText + fullTranscript;
+          console.log('💾 最終結果:', `"${newFullText}"`);
+          setCurrentInput(newFullText);
+          
+          // 次回の比較のために長さを保存
+          lastTranscriptLength = fullTranscript.length;
+        };
+      
+        recognitionInstance.onerror = (event: any) => {
+          console.error('🚨 音声認識エラー:', event.error);
+          console.error('🚨 エラーイベント全体:', event);
+          
+          // エラータイプに応じた処理
+          if (event.error === 'no-speech') {
+            // 音声が検出されない場合は継続
+            console.log('🔇 音声が検出されません。待機中...');
+          } else if (event.error === 'audio-capture') {
+            // マイクアクセスエラー
+            console.error('🎤 マイクアクセスエラー');
+            setError('マイクにアクセスできません。マイクの権限を確認してください。');
+            setIsListening(false);
+          } else if (event.error === 'not-allowed') {
+            // 権限がない
+            console.error('🚫 マイク権限エラー');
+            setError('音声認識の権限が必要です。ブラウザの設定を確認してください。');
+            setIsListening(false);
+          } else if (event.error === 'network') {
+            // ネットワークエラー
+            console.error('🌐 ネットワークエラー');
+            setError('ネットワーク接続を確認してください。');
+            setIsListening(false);
+          } else if (event.error === 'aborted') {
+            // 中断された
+            console.log('⏹️ 音声認識が中断されました');
+          } else {
+            // その他のエラー
+            console.warn('⚠️ その他の音声認識エラー:', event.error);
+            setError(`音声認識エラー: ${event.error}`);
+            setIsListening(false);
+          }
+          
+          setInterimText('');
+        };
+      
+        recognitionInstance.onend = () => {
+          console.log('音声認識終了');
+          setInterimText(''); // 音声認識終了時に中間テキストをクリア
+          lastTranscriptLength = 0;
+          
+          // 状態をfalseに設定（監視システムが自動再開する）
+          setIsListening(false);
+        };
+      
+        setRecognition(recognitionInstance);
       } else {
         console.error('音声認識APIがブラウザでサポートされていません');
         setError('お使いのブラウザは音声認識に対応していません。Chrome、Edge、Safariなどをお使いください。');
@@ -284,30 +284,54 @@ export function ReflectionInterviewChat({
     };
   }, []); // 依存配列を空にして一度だけ実行
 
-  // 音声入力をデフォルトで開始
+  // 🚀 完全な常時音声入力システム
   useEffect(() => {
-    if (isSessionActive && recognition && !isListening) {
-      // マイクの権限を確認してから開始
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then((stream) => {
-          console.log('🎤 マイクアクセス許可取得成功');
-          // ストリームを停止（権限確認のみ）
-          stream.getTracks().forEach(track => track.stop());
-          
-          // セッション開始後、少し遅延を入れて音声認識を自動開始
-          const timer = setTimeout(() => {
-            console.log('音声入力をデフォルトで開始します');
-            startListening();
-          }, 1000);
-          
-          return () => clearTimeout(timer);
-        })
-        .catch((error) => {
-          console.error('🚫 マイクアクセス拒否:', error);
-          setError('マイクへのアクセスが拒否されました。ブラウザの設定でマイクの使用を許可してください。');
-        });
-    }
-  }, [isSessionActive, recognition]); // セッションとrecognitionの準備ができたら実行
+    if (!isSessionActive || !recognition) return;
+
+    let attemptCount = 0;
+    const MAX_ATTEMPTS = 3;
+    
+    const ensureListening = () => {
+      if (isListening || isThinking) return;
+      
+      attemptCount++;
+      console.log(`🎤 音声認識開始試行 ${attemptCount}/${MAX_ATTEMPTS}`);
+      
+      try {
+        recognition.start();
+        setIsListening(true);
+      } catch (error) {
+        console.error('音声認識開始エラー:', error);
+        
+        if (attemptCount < MAX_ATTEMPTS) {
+          setTimeout(() => ensureListening(), 500);
+        } else {
+          console.error('音声認識開始に複数回失敗しました');
+          setError('音声認識の開始に失敗しました。ページを再読み込みしてください。');
+        }
+      }
+    };
+
+    // 🚀 常時監視: 500msごとに音声認識状態をチェック
+    const monitoringInterval = setInterval(() => {
+      if (!isListening && !isThinking && shouldStartListening) {
+        console.log('🔄 音声認識が停止中 - 自動再開します');
+        ensureListening();
+      }
+    }, 500);
+
+    // 初回開始
+    const initialTimer = setTimeout(() => {
+      if (!isListening && !isThinking) {
+        ensureListening();
+      }
+    }, 1000);
+
+    return () => {
+      clearInterval(monitoringInterval);
+      clearTimeout(initialTimer);
+    };
+  }, [isSessionActive, recognition, isListening, isThinking, shouldStartListening]);
 
   // タイマー（15分間管理）
   useEffect(() => {
@@ -390,6 +414,8 @@ export function ReflectionInterviewChat({
     setTimeout(() => {
       typewriterEffect(welcomeMessage.id, initialQuestion, 60);
     }, 500);
+    
+    // 🚀 音声認識は常時音声入力モードの監視システムが自動処理
   };
 
   const generateInitialQuestion = async (): Promise<string> => {
@@ -423,8 +449,9 @@ export function ReflectionInterviewChat({
 
       const data = await response.json();
       
-      // 段階移行の処理
+      // 🚀 段階移行の処理 - API側の厳格な判定を絶対優先
       if (data.stageTransition) {
+        console.log(`🔄 API承認済み段階移行: ${data.stageTransition.from} → ${data.stageTransition.to} (深度: ${data.stageTransition.depth})`);
         setCurrentStage(data.stageTransition.to);
         setInterviewDepth(data.stageTransition.depth);
         
@@ -437,7 +464,8 @@ export function ReflectionInterviewChat({
           }
         }));
       } else {
-        // 同じ段階内での深度増加
+        // 🚀 段階移行なし - API側が段階継続を判定
+        console.log(`📈 段階継続: ${currentStage} (深度: ${interviewDepth} → ${interviewDepth + 1})`);
         setInterviewDepth(prev => prev + 1);
         setStageProgress(prev => ({
           ...prev,
@@ -464,21 +492,73 @@ export function ReflectionInterviewChat({
 
   // パターン決定ヘルパー関数
   const determineInterviewPattern = (inquiryActivity: string): string => {
-    // 協働・芸術系のキーワード
-    const collaborativeArtistic = /ダンス|演劇|音楽|バンド|合唱|吹奏楽|チーム|グループ|部活|サークル|みんな|仲間|協力|発表/.test(inquiryActivity);
+    console.log(`🔍 探究活動分析開始: "${inquiryActivity}"`);
     
-    // 科学・個人研究系のキーワード
-    const scientificIndividual = /生き物|植物|動物|飼育|栽培|実験|観察|研究|調査|一人|個人|自分で|コレクション|標本/.test(inquiryActivity);
+    // Hさんパターン（芸術・協働系）の特徴分析
+    const artisticKeywords = /ダンス|演劇|音楽|バンド|合唱|吹奏楽|美術|アート|創作|表現/.test(inquiryActivity);
+    const collaborativeKeywords = /チーム|グループ|部活|サークル|みんな|仲間|協力|一緒|話し合い|練習|発表/.test(inquiryActivity);
+    const performanceKeywords = /発表|舞台|コンサート|展示|披露|見せる|観客/.test(inquiryActivity);
     
-    if (collaborativeArtistic) {
-      console.log('🎭 Hさんパターン（芸術・協働系）を選択');
-      return 'artistic_collaborative';
-    } else if (scientificIndividual) {
+    // Tさんパターン（科学・個人研究系）の特徴分析
+    const biologicalKeywords = /生き物|植物|動物|飼育|栽培|メダカ|金魚|昆虫|鳥|ペット|水質|土壌/.test(inquiryActivity);
+    const scientificKeywords = /実験|観察|研究|調査|分析|測定|記録|データ|pH|温度|成長|変化/.test(inquiryActivity);
+    const individualKeywords = /一人|個人|自分で|自主的|独自|個別|単独/.test(inquiryActivity);
+    const systematicKeywords = /継続|記録|観察|データ|分析|比較|測定|実験|研究/.test(inquiryActivity);
+    
+    // 環境・委員会活動の詳細分析
+    const environmentalKeywords = /環境|委員会|緑化|植物|校内|学校|清掃|リサイクル/.test(inquiryActivity);
+    
+    // スコアリングシステム
+    let artisticCollaborativeScore = 0;
+    let scientificIndividualScore = 0;
+    
+    // Hさんパターンスコア計算
+    if (artisticKeywords) artisticCollaborativeScore += 3;
+    if (collaborativeKeywords) artisticCollaborativeScore += 2;
+    if (performanceKeywords) artisticCollaborativeScore += 2;
+    
+    // Tさんパターンスコア計算
+    if (biologicalKeywords) scientificIndividualScore += 3;
+    if (scientificKeywords) scientificIndividualScore += 3;
+    if (individualKeywords) scientificIndividualScore += 2;
+    if (systematicKeywords) scientificIndividualScore += 2;
+    if (environmentalKeywords) scientificIndividualScore += 1;
+    
+    // 複合パターンの検出
+    const isEnvironmentalCommittee = /環境委員会/.test(inquiryActivity);
+    const hasPlantCare = /植物|緑化|栽培|育成/.test(inquiryActivity);
+    const hasAnimalCare = /メダカ|動物|生き物|飼育/.test(inquiryActivity);
+    const hasDataAnalysis = /pH|水質|測定|記録|観察|データ/.test(inquiryActivity);
+    
+    // 特殊ケース：環境委員会で生物・データ分析をしている場合
+    if (isEnvironmentalCommittee && (hasPlantCare || hasAnimalCare) && hasDataAnalysis) {
+      scientificIndividualScore += 4;
+      console.log('🔬 環境委員会での生物・データ研究を検出 -> Tさんパターン強化');
+    }
+    
+    console.log(`📊 スコア分析: Hさん系=${artisticCollaborativeScore}, Tさん系=${scientificIndividualScore}`);
+    
+    // 判定結果
+    if (scientificIndividualScore > artisticCollaborativeScore) {
       console.log('🔬 Tさんパターン（科学・個人研究系）を選択');
+      console.log(`理由: 生物${biologicalKeywords ? '✓' : '✗'}, 科学${scientificKeywords ? '✓' : '✗'}, 個人研究${individualKeywords ? '✓' : '✗'}, 体系的${systematicKeywords ? '✓' : '✗'}`);
       return 'scientific_individual';
+    } else if (artisticCollaborativeScore > 0) {
+      console.log('🎭 Hさんパターン（芸術・協働系）を選択');
+      console.log(`理由: 芸術${artisticKeywords ? '✓' : '✗'}, 協働${collaborativeKeywords ? '✓' : '✗'}, 発表${performanceKeywords ? '✓' : '✗'}`);
+      return 'artistic_collaborative';
     } else {
-      console.log('🎭 デフォルトでHさんパターンを選択');
-      return 'artistic_collaborative'; // デフォルト
+      // 明確な特徴がない場合、内容を詳細分析
+      const textLength = inquiryActivity.length;
+      const hasSpecificTerms = /具体的|詳細|深く|研究|分析/.test(inquiryActivity);
+      
+      if (textLength > 100 && hasSpecificTerms) {
+        console.log('🔬 詳細な記述から科学系と推定 -> Tさんパターン');
+        return 'scientific_individual';
+      } else {
+        console.log('🎭 デフォルトでHさんパターンを選択');
+        return 'artistic_collaborative';
+      }
     }
   };
 
@@ -581,7 +661,7 @@ export function ReflectionInterviewChat({
   };
 
   const startListening = () => {
-    console.log('startListening called - recognition:', recognition, 'isListening:', isListening);
+    console.log('🎤 startListening called - 常時音声入力モード有効化');
     
     if (!recognition) {
       console.error('音声認識が初期化されていません');
@@ -590,35 +670,28 @@ export function ReflectionInterviewChat({
       return;
     }
     
-    if (recognition && !isListening) {
-      console.log('音声認識開始を試みます');
-      setIsListening(true);
-      setInterimText(''); // 開始時に中間テキストをクリア
-      try {
-        recognition.start();
-        console.log('recognition.start() 成功');
-      } catch (error: any) {
-        console.error('音声認識開始エラー:', error);
-        console.error('エラー詳細:', error.message, error.name);
-        setError(`音声認識エラー: ${error.message || 'マイクの許可を確認してください。'}`);
-        setIsListening(false);
-        setTimeout(() => setError(null), 5000);
-      }
-    } else {
-      console.log('音声認識はすでに開始されています');
-    }
+    // 🚀 常時音声入力モードを有効化（監視システムが自動開始）
+    setShouldStartListening(true);
+    console.log('🚀 常時音声入力モードを有効化しました');
   };
 
   const stopListening = () => {
-    if (recognition && isListening) {
-      console.log('音声認識停止');
-      setIsListening(false); // 先にステートを更新して自動再開を防ぐ
+    console.log('🛑 stopListening called - 常時音声入力モード無効化');
+    
+    // 🚀 常時音声入力モードを無効化（監視システムが自動停止）
+    setShouldStartListening(false);
+    setIsListening(false);
+    
+    if (recognition) {
       try {
         recognition.stop();
+        console.log('🛑 音声認識を完全停止');
       } catch (error) {
         console.error('音声認識停止エラー:', error);
       }
       setInterimText(''); // 中間テキストもクリア
+      setCurrentInput(''); // 入力内容もクリア
+      console.log('🧹 音声認識停止時：全入力内容クリア完了');
     }
   };
 
@@ -647,23 +720,10 @@ export function ReflectionInterviewChat({
         setTimeout(() => {
           setTypingMessageId(null);
           
-          // さらに少し遅延してから音声認識を確実にクリーンな状態で再開
+          // 🚀 常時音声入力モード再開（監視システムが自動開始）
           setTimeout(() => {
-            if (recognition && !isThinking) {
-              console.log('💬 オーバーレイ消去後 - 音声認識を確実に再開');
-              // 現在の状態に関係なく、音声認識を確実に開始
-              try {
-                if (isListening) {
-                  recognition.stop();
-                }
-                setTimeout(() => {
-                  startListening();
-                }, 200);
-              } catch (error) {
-                console.error('オーバーレイ後の音声認識再開エラー:', error);
-                startListening(); // エラーでも再開を試す
-              }
-            }
+            setShouldStartListening(true);
+            console.log('💬 タイプライター効果完了 - 常時音声入力モード再開');
           }, 300);
         }, 1500);
       }
@@ -690,8 +750,10 @@ export function ReflectionInterviewChat({
     
     setMessages(prev => [...prev, studentMessage]);
     
-    // 音声認識が動作中であれば停止（ベーステキストをリセットするため）
+    // 🚀 音声認識停止と常時音声入力モードの一時停止
+    setShouldStartListening(false); // 一時的に自動再開を停止
     if (isListening && recognition) {
+      console.log('🎤 送信時：音声認識を停止してリセット');
       setIsListening(false);
       try {
         recognition.stop();
@@ -700,33 +762,31 @@ export function ReflectionInterviewChat({
       }
     }
     
-    // 入力欄と中間テキストをクリア
+    // 入力欄と中間テキストを完全にクリア
+    console.log('📝 送信後：完全な入力クリア処理開始');
+    const originalInput = currentInput.trim(); // 送信用の値を保存
+    
     setCurrentInput('');
     setInterimText('');
-    finalTranscriptRef.current = ''; // 確定テキストもクリア
+    finalTranscriptRef.current = ''; // ref も完全リセット
     setIsSending(false);
     
-    // 音声認識を常にクリーンな状態で再起動（デフォルト音声入力）
-    if (recognition) {
-      console.log('📝 メッセージ送信後、音声認識をクリーンな状態で再起動');
-      try {
-        if (isListening) {
-          recognition.stop();
+    // DOM要素も直接クリア（確実性のため）
+    setTimeout(() => {
+      const textareas = document.querySelectorAll('textarea[placeholder*="音声入力"]');
+      textareas.forEach(textarea => {
+        if (textarea instanceof HTMLTextAreaElement) {
+          textarea.value = '';
         }
-        // 少し遅延してからクリーンな状態で再開
-        setTimeout(() => {
-          if (recognition && !isThinking) {
-            console.log('🔄 クリーンな状態で音声認識を再開');
-            setIsListening(false); // 一度停止状態にしてから
-            setTimeout(() => {
-              startListening();
-            }, 100);
-          }
-        }, 200);
-      } catch (error) {
-        console.error('音声認識のクリーンな再起動でエラー:', error);
-      }
-    }
+      });
+      
+      setCurrentInput('');
+      setInterimText('');
+      finalTranscriptRef.current = '';
+      console.log('📝 DOM直接クリア完了');
+    }, 0);
+    
+    // 🚀 音声認識は常時音声入力モードの監視システムが自動処理
     
     setIsThinking(true);
     
@@ -765,6 +825,8 @@ export function ReflectionInterviewChat({
         typewriterEffect(closingMessage.id, closingMessage.content, 50);
       }, 100);
       
+      // 音声認識は終了メッセージなので再開しない
+      
       // 6秒後に自動終了（タイプライター効果完了を待つ）
       setTimeout(() => {
         endSession();
@@ -795,28 +857,55 @@ export function ReflectionInterviewChat({
         typewriterEffect(interviewerMessage.id, nextQuestion, 50);
       }, 100);
       
+      // 🚀 音声認識は常時音声入力モードの監視システムが自動処理
+      
     } else {
       // 通常の質問継続
       let nextQuestion: string;
       
-      // opening段階での強制的な順序制御
+      // 🚀 文脈理解型opening段階 - 学生の回答内容を分析
       if (currentStage === 'opening') {
         const studentAnswerCount = updatedHistory.filter(m => m.role === 'student').length;
-        console.log(`🔍 Opening段階: 学生回答数=${studentAnswerCount}`);
+        const lastStudentAnswer = updatedHistory.filter(m => m.role === 'student').slice(-1)[0]?.content || '';
+        const lastInterviewerQuestion = updatedHistory.filter(m => m.role === 'interviewer').slice(-1)[0]?.content || '';
+        
+        console.log(`🔍 Opening段階: 学生回答数=${studentAnswerCount}, 前回回答="${lastStudentAnswer}"`);
         
         if (studentAnswerCount === 1) {
           // 受検番号・名前の次は必ず交通手段
           nextQuestion = 'ありがとうございます。こちらまでは何で来られましたか？';
           console.log('✅ 交通手段質問を設定');
         } else if (studentAnswerCount === 2) {
-          // 交通手段の次は必ず所要時間
-          nextQuestion = 'そうですか。どれくらい時間がかかりましたか？';
-          console.log('✅ 所要時間質問を設定');
+          // 🚀 交通手段の回答を分析して適切な次質問を決定
+          const hasTimeInfo = /\d+分|時間|分ぐらい|分くらい|時間ぐらい|時間くらい/.test(lastStudentAnswer);
+          
+          // 🚀 段階移行はAPI側の厳格な判定に委ねる - クライアント側では質問のみ生成
+          if (hasTimeInfo) {
+            // 既に時間情報が含まれている場合は探究活動に進む（段階移行はAPIが判定）
+            nextQuestion = 'そうですね。それでは、あなたが取り組んでいる探究活動について、1分ほどで説明してください。';
+            console.log('✅ 時間情報検出済み - 探究活動質問を設定（段階移行はAPI判定待ち）');
+          } else {
+            // 時間情報が含まれていない場合のみ時間を聞く
+            nextQuestion = 'そうですか。どれくらい時間がかかりましたか？';
+            console.log('✅ 時間情報なし - 所要時間質問を設定');
+          }
         } else if (studentAnswerCount >= 3) {
-          // 3回目以降で探究活動へ、段階移行
-          nextQuestion = 'それでは、あなたが取り組んでいる探究活動について、1分ほどで説明してください。';
-          setCurrentStage('exploration'); // 段階を移行
-          console.log('✅ 探究活動質問を設定、exploration段階に移行');
+          // 🚀 重複質問防止 - 既に探究活動の質問をしているかチェック
+          const alreadyAskedAboutInquiry = updatedHistory.some(m => 
+            m.role === 'interviewer' && 
+            m.content.includes('探究活動について') && 
+            m.content.includes('説明してください')
+          );
+          
+          if (alreadyAskedAboutInquiry) {
+            // 既に探究活動の質問をしている場合は、APIに任せる
+            console.log('🔄 探究活動質問済み - APIに質問生成を委任');
+            nextQuestion = await generateNextQuestion(updatedHistory);
+          } else {
+            // まだ探究活動の質問をしていない場合のみ設定
+            nextQuestion = 'それでは、あなたが取り組んでいる探究活動について、1分ほどで説明してください。';
+            console.log('✅ 探究活動質問を設定（段階移行はAPI判定待ち）');
+          }
         } else {
           // 0回の場合（開始時）
           nextQuestion = 'それでは面接を始めます。受検番号と名前を教えてください。';
@@ -840,6 +929,8 @@ export function ReflectionInterviewChat({
       setTimeout(() => {
         typewriterEffect(interviewerMessage.id, nextQuestion, 50);
       }, 100);
+      
+      // 🚀 音声認識は常時音声入力モードの監視システムが自動処理
     }
 
     // XP獲得処理 - 無効化（会話の邪魔になるため）
