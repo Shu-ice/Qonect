@@ -85,4 +85,4 @@ prisma/migrations/
 
 # Claude
 .claude/
-.kiro/ 
+.kiro/ nul
