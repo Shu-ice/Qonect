@@ -112,7 +112,7 @@ export default function TestPremiumQuality() {
         testResults.push({
           scenario: scenario.name,
           description: scenario.description,
-          error: error.message
+          error: (error as Error).message
         });
       }
     }

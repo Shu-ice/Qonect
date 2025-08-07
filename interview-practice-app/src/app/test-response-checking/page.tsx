@@ -104,7 +104,7 @@ export default function TestResponseChecking() {
         testResults.push({
           scenario: scenario.name,
           description: scenario.description,
-          error: error.message,
+          error: (error as Error).message,
           studentAnswer: scenario.conversationHistory[scenario.conversationHistory.length - 1].content
         });
       }

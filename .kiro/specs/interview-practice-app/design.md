@@ -2,60 +2,157 @@
 
 ## 📐 システム設計概要
 
-### 設計原則
-1. **実際面接フロー完全再現**: 二次面接合格者の面接を4段階で技術的に実装
-2. **段階的深堀り対話システム**: 5-6層の自然な深堀り質問による真の対話体験
-3. **モバイルファースト**: タブレット・スマホでの最適な利用体験
-4. **教育理念統合**: 明和高校附属中の求める生徒像を技術的に実装
-5. **探究活動特化**: 志願理由書4項目の構造化分析とAI質問生成
-6. **小学生適応**: 直感的操作、大型UI、音声主体の入力システム
-7. **課題解決プロセス評価**: 問題→解決→学びのフロー可視化技術
-8. **品質最優先**: 上質な学習体験のための高性能AI活用とプレミアム機能実装
+### 設計原則（コアテクノロジー）
+1. **AIリフレクション面接**: Gemini APIによる動的質問生成でリフレクション面接を再現
+2. **段階的深堀りエンジン**: 7-9層の質問チェーン自動生成技術
+3. **不適切回答AI検出**: 「吾輩は猫である」等のふざけた回答を自動判定・指導
+4. **活動タイプ別AI対応**: 科学系・芸術系等の6パターンで質問を特化
+5. **小学生特化UI**: タブレット最適化、大型タッチターゲット、音声メイン
+6. **リアルタイムAI評価**: 明和中7軸評価による即座フィードバック
+7. **文脈理解AI**: 受検生回答から重要キーワード自動抽出・活用
+8. **マルチAI冗長化**: Gemini障害時のGPT-4/Claude自動切り替え
 
-## 🏗️ システムアーキテクチャ
+## 🏗️ AIリフレクション面接システム アーキテクチャ
 
-### 1. 全体アーキテクチャ図
+### 1. コアAIエンジン アーキテクチャ
 
 ```
-[タブレット/スマホ] ←→ [PWA Frontend] ←→ [API Gateway] ←→ [Backend Services]
+[受検生回答] → [キーワード抽出AI] → [活動タイプ識別] → [深掘りターゲット特定]
+      ↓                 ↓                  ↓                    ↓
+[Gemini API]      [文脈理解処理]      [6活動パターン]      [7-9層質問生成]
+      ↓                 ↓                  ↓                    ↓
+[動的質問生成]    [不適切回答検出]    [段階移行判定]       [リアルタイム評価]
+      ↓                 ↓                  ↓                    ↓
+[AIチャット出力] ← [建設的指導] ← [探究深度管理] ← [明和7軸フィードバック]
+```
+
+### 2. 全体システム構成
+
+```
+[タブレット/スマホ] ←→ [PWA Frontend] ←→ [Next.js API] ←→ [AIエンジン群]
        ↓                    ↓                   ↓                 ↓
-[音声認識]            [Service Worker]      [Rate Limiter]    [対話フロー管理Engine]
-[タッチUI]            [Local Storage]      [Auth Middleware]  [段階的質問生成AI]
-[PWA Cache]           [Push Notifications]  [CORS Handler]     [実際面接パターンDB]
-                                                               [課題解決評価Engine]
-                                                               [メタ認知評価System]
-                                                               [教育理念Engine]
-                                                               [AI API Proxy]
-                                                               [Database]
+[音声認識]            [リアルタイムUI]      [質問生成API]    [Gemini 2.5 Flash]
+[タッチUI]            [状況表示]          [評価API]        [GPT-4 Fallback]
+[PWA Cache]           [進捗管理]          [不適切検出API]   [Claude Fallback]
 ```
 
-### 2. 技術スタック詳細
+### 3. 技術スタック詳細
 
 #### フロントエンド（PWA）
-- **Core**: React 18.2+ + TypeScript 5.0+
-- **Styling**: Tailwind CSS 3.3+ (mobile-first utilities)
-- **State Management**: Zustand (軽量、TypeScript friendly)
-- **PWA Framework**: Workbox 7.0+ (Service Worker管理)
-- **Audio**: Web Speech API + MediaRecorder API
-- **Build Tool**: Vite 4.0+ (高速ビルド、PWA plugin)
+- **Core**: Next.js 14 + React 18 + TypeScript 5.0+
+- **Styling**: Tailwind CSS (小学生特化、44px以上タッチターゲット)
+- **State Management**: React Hook + Context API（軽量）
+- **PWA**: Service Worker（オフライン音声認識対応）
+- **Audio**: Web Speech API（音声メイン入力）
+- **Build Tool**: Next.js built-in optimizations
 
 #### バックエンド
-- **Runtime**: Node.js 18+ LTS
-- **Framework**: Express.js 4.18+ + TypeScript
-- **ORM**: Prisma 5.0+ (type-safe database operations)
-- **Validation**: Zod (runtime type validation)
-- **Security**: Helmet, CORS, rate-limiting
+- **Framework**: Next.js 14 API Routes + TypeScript
+- **ORM**: Prisma（SQLite開発 / PostgreSQL本番）
+- **Security**: 個人情報暗号化、レート制限、CORS対応
+
+## 🤖 コアAI技術仕様
+
+### 1. 動的リフレクション質問生成エンジン
+
+#### キーワード抽出アルゴリズム
+```typescript
+function extractSpecificKeywords(response: string): string[] {
+  const highPriorityPatterns = [
+    /環境委員会|生徒会|委員会|部活動|クラブ活動/g,
+    /メダカ|植物|動物|水質|pH値|ダンス|音楽|プログラミング/g
+  ];
+  
+  const mediumPriorityPatterns = [
+    /観察|記録|測定|実験|調査|研究|分析/g,
+    /小学[1-6]年生|[1-9]年間|毎日|週[1-7]回|継続/g,
+    /困難|大変|難しい|失敗|うまくいかない|挫折/g
+  ];
+  
+  // 優先度順で最大5個まで抽出
+  return extractByPriority(response, [highPriorityPatterns, mediumPriorityPatterns]);
+}
+```
+
+#### 活動タイプ識別システム
+```typescript
+function identifyActivityType(response: string): ActivityType {
+  const typePatterns = {
+    '科学・個人研究系': /メダカ|植物|動物|水質|pH|実験|観察|育成/,
+    '芸術・協働系': /ダンス|音楽|演劇|美術|チーム|グループ|発表/,
+    'スポーツ・競技系': /サッカー|野球|バスケ|記録|タイム|練習|試合/,
+    '技術・創造系': /プログラミング|ロボット|アプリ|電子工作|作る/,
+    'リーダーシップ系': /生徒会|委員長|代表|リーダー|企画|運営/
+  };
+  
+  // パターンマッチングで活動タイプを自動識別
+  return matchActivityType(response, typePatterns);
+}
+```
+
+#### 7-9層深掘り質問生成
+```typescript
+async function generateInquiryDeepDiveQuestion(context): Promise<string> {
+  const extractedKeywords = extractSpecificKeywords(lastResponse);
+  const activityType = identifyActivityType(lastResponse);
+  const deepDiveTargets = identifyDeepDiveTargets(lastResponse);
+  
+  const prompt = `
+  【明和中AIリフレクション面接システム】
+  
+  受検生回答: "${lastResponse}"
+  抽出キーワード: ${extractedKeywords.join('、')}
+  活動タイプ: ${activityType}
+  深掘りターゲット: ${deepDiveTargets.join('、')}
+  
+  実際の合格者面接レベルの質問技術で7-9層深掘り質問を生成:
+  - 受検生の発言から具体的キーワードを必ず活用
+  - "${extractedKeywords[0]}について〜ですね"で発言を受け止める
+  - その後"〜はありませんでしたか？"で深掘りする
+  - 活動タイプ別の専門的質問をする
+  `;
+  
+  return await geminiAPI.generate(prompt);
+}
+```
+
+### 2. 不適切回答AI検出システム
+
+```typescript
+async function checkInappropriateAnswer(question: string, answer: string) {
+  const prompt = `
+  【明和中面接：回答適切性AI判定】
+  
+  質問: "${question}"
+  受検生回答: "${answer}"
+  
+  不適切な例: ふざけた内容（「吾輩は猫である」「適当に」等）
+  
+  判定結果をJSON形式で出力:
+  {
+    "inappropriate": true/false,
+    "reason": "判定理由"
+  }
+  `;
+  
+  const result = await geminiAPI.generate(prompt);
+  return JSON.parse(result);
+}
+```
 
 #### データベース
 - **Development**: SQLite 3.40+ (ローカル開発、軽量)
 - **Production**: PostgreSQL 15+ (Prisma互換、スケーラブル)
 - **Cache**: Redis 7.0+ (セッション、レート制限)
 
-#### 外部サービス（プレミアム品質）
-- **AI API**: 
-  - OpenAI GPT-4 Turbo（段階的質問生成・対話フロー管理）
-  - Claude 3.5 Sonnet（自然な会話生成・共感的応答）
-  - Gemini Pro（多角的検証・パターンマッチング）
+#### AIエンジン（コア技術）
+- **メインAI**: Gemini 2.5 Flash（動的リフレクション質問生成）
+- **フォールバック**: マルチAI対応（OpenAI GPT-4, Claude 3.5）
+- **コア機能**: 
+  - 受検生回答の文脈理解・キーワード抽出
+  - 活動タイプ識別（科学系、芸術系、スポーツ系等）
+  - 7-9層の段階的深堀り質問自動生成
+  - 不適切回答検出・建設的指導
 - **音声処理**: Google Cloud Speech-to-Text + Azure Speech Service（高精度音声認識）
 - **音声合成**: ElevenLabs（自然な日本語音声合成）
 - **File Storage**: AWS S3 + CloudFront CDN（高速配信）
