@@ -109,19 +109,18 @@ export function OptimizedInterviewChat({ essayContent, onSessionEnd }: Optimized
       setIsLoading(true);
       setIsTyping(true);
 
-      const response = await fetch('/api/interview/generate-question', {
+      // 真のAI面接エンドポイント - 受検生の発言を理解してリアクション
+      const response = await fetch('/api/interview/ai-interview', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          essayContent,
+          userMessage,
           conversationHistory: messages.map(m => ({
             role: m.role,
             content: m.content,
           })),
-          userMessage,
-          studentAnswerCount: studentAnswerCount.current,
         }),
       });
 

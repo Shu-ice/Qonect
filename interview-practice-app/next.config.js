@@ -74,6 +74,8 @@ const nextConfig = {
   // 環境変数設定
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
+    GOOGLE_GENERATIVE_AI_API_KEY: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
   },
 
   // TypeScript設定

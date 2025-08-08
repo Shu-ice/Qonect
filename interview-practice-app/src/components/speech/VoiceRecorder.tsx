@@ -150,6 +150,11 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     onStop?.();
   }, [onStop]);
 
+  // トランスクリプトクリア用の公開メソッド
+  const clearTranscript = useCallback(() => {
+    setCurrentTranscript('');
+  }, []);
+
   const handleVolumeChange = useCallback((newVolume: number) => {
     setVolume(newVolume);
     

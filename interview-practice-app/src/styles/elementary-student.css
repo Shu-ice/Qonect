@@ -1,0 +1,357 @@
+/* 🎯 小学6年生向け最適化CSS */
+/* 明和中面接練習アプリ専用スタイル */
+
+:root {
+  /* 小学生に優しい色彩設計 */
+  --primary-color: #4a90e2;      /* 信頼感のある青 */
+  --success-color: #5cb85c;      /* 励ましの緑 */
+  --warning-color: #f0ad4e;      /* 注意の黄色 */
+  --danger-color: #ff6b6b;       /* 優しい赤 */
+  --background: #f7f9fc;         /* 目に優しい背景 */
+  
+  /* 文字サイズ（最小16px保証） */
+  --font-size-small: 16px;
+  --font-size-base: 18px;
+  --font-size-large: 20px;
+  --font-size-xl: 24px;
+  --font-size-xxl: 28px;
+  
+  /* タッチターゲット（44px以上） */
+  --touch-target: 48px;
+  --button-height: 52px;
+  --input-height: 48px;
+  
+  /* 間隔 */
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+}
+
+/* 🎨 小学生向けグローバルスタイル */
+.elementary-app {
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+  color: #2c3e50;
+}
+
+/* 📱 タッチ最適化ボタン */
+.btn-elementary {
+  min-height: var(--button-height);
+  min-width: 120px;
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--font-size-large);
+  font-weight: 600;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-elementary:active {
+  transform: scale(0.98);
+}
+
+/* メインボタン */
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+/* 成功ボタン */
+.btn-success {
+  background: linear-gradient(135deg, #5cb85c 0%, #4cae4c 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(92, 184, 92, 0.4);
+}
+
+/* 🎤 音声録音ボタン（特大） */
+.btn-record {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+  color: white;
+  font-size: 32px;
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
+  position: relative;
+  animation: pulse 2s infinite;
+}
+
+.btn-record.recording {
+  animation: recording-pulse 1s infinite;
+  background: linear-gradient(135deg, #ff5252 0%, #ff1744 100%);
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5); }
+  50% { box-shadow: 0 6px 30px rgba(255, 107, 107, 0.7); }
+  100% { box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5); }
+}
+
+@keyframes recording-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* 💬 チャットメッセージ */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  max-width: 100%;
+}
+
+.chat-message {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: 16px;
+  max-width: 85%;
+  font-size: var(--font-size-large);
+  line-height: 1.8;
+  word-wrap: break-word;
+}
+
+.chat-message.interviewer {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+
+.chat-message.student {
+  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+
+/* 📝 入力フィールド */
+.input-elementary {
+  min-height: var(--input-height);
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--font-size-large);
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  background: white;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.input-elementary:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+}
+
+/* 📊 進捗バー */
+.progress-container {
+  background: #f0f0f0;
+  border-radius: 20px;
+  height: 24px;
+  overflow: hidden;
+  margin: var(--spacing-md) 0;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #4a90e2 0%, #667eea 100%);
+  border-radius: 20px;
+  transition: width 0.5s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* 🎯 ステージインジケーター */
+.stage-indicator {
+  display: flex;
+  justify-content: space-between;
+  margin: var(--spacing-lg) 0;
+  padding: 0 var(--spacing-md);
+}
+
+.stage-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex: 1;
+}
+
+.stage-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.stage-circle.active {
+  background: linear-gradient(135deg, #4a90e2 0%, #667eea 100%);
+  color: white;
+  transform: scale(1.2);
+}
+
+.stage-circle.completed {
+  background: var(--success-color);
+  color: white;
+}
+
+.stage-label {
+  font-size: 14px;
+  text-align: center;
+  color: #666;
+}
+
+/* 📱 タブレット最適化 */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .chat-container {
+    padding: var(--spacing-xl);
+  }
+  
+  .chat-message {
+    max-width: 70%;
+  }
+  
+  .btn-record {
+    width: 100px;
+    height: 100px;
+    font-size: 40px;
+  }
+}
+
+/* 📱 スマートフォン最適化 */
+@media (max-width: 767px) {
+  :root {
+    --font-size-base: 16px;
+    --font-size-large: 18px;
+    --font-size-xl: 20px;
+  }
+  
+  .chat-message {
+    max-width: 90%;
+    font-size: var(--font-size-base);
+  }
+  
+  .btn-elementary {
+    width: 100%;
+    margin: var(--spacing-xs) 0;
+  }
+  
+  .stage-label {
+    font-size: 12px;
+  }
+}
+
+/* 🌟 アニメーション効果 */
+.fade-in {
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* 🎨 励ましメッセージ */
+.encouragement-message {
+  background: linear-gradient(135deg, #fff9c4 0%, #ffeb3b 100%);
+  border-radius: 16px;
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin: var(--spacing-md) 0;
+  text-align: center;
+  font-size: var(--font-size-large);
+  font-weight: 600;
+  color: #f57c00;
+  animation: bounce 1s ease;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* 🏆 バッジ・実績 */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: linear-gradient(135deg, #ffd700 0%, #ffb300 100%);
+  color: white;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  box-shadow: 0 4px 10px rgba(255, 215, 0, 0.4);
+}
+
+/* 🎯 タイマー表示 */
+.timer-display {
+  font-size: var(--font-size-xxl);
+  font-weight: bold;
+  color: var(--primary-color);
+  text-align: center;
+  padding: var(--spacing-md);
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  min-width: 120px;
+}
+
+/* 🌈 成功フィードバック */
+.success-feedback {
+  background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%);
+  border-left: 4px solid var(--success-color);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: 8px;
+  margin: var(--spacing-md) 0;
+  font-size: var(--font-size-base);
+}
+
+/* ⚠️ エラーメッセージ（優しい表現） */
+.error-message {
+  background: #ffebee;
+  border-left: 4px solid #ffcdd2;
+  color: #c62828;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: 8px;
+  margin: var(--spacing-md) 0;
+  font-size: var(--font-size-base);
+}
+
+/* 📚 ルビ表示 */
+ruby {
+  font-size: var(--font-size-large);
+}
+
+ruby rt {
+  font-size: 0.6em;
+  color: #666;
+}

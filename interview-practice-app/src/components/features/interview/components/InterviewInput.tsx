@@ -31,29 +31,33 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
 
     recognition.onstart = () => {
       setIsListening(true);
-      // 録音開始時に前の内容をクリア
-      setTranscript('');
-      setInput('');
+      // 録音開始時は前の内容を保持（送信後のみクリア）
+      console.log('🎤 音声認識開始');
     };
 
     recognition.onresult = (event) => {
-      let allFinalTranscript = '';
-      let currentInterimTranscript = '';
-
-      // 全ての結果を処理（resultIndexは使わない）
-      for (let i = 0; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          allFinalTranscript += transcript;
-        } else {
-          currentInterimTranscript += transcript;
-        }
+      let latestResult = '';
+      
+      // 最新の結果のみを取得（累積を避ける）
+      const lastResult = event.results[event.results.length - 1];
+      if (lastResult) {
+        latestResult = lastResult[0].transcript;
       }
 
-      // 最終的な音声認識結果をセット
-      const fullTranscript = allFinalTranscript + currentInterimTranscript;
-      setTranscript(fullTranscript);
-      setInput(fullTranscript); // 累積ではなく置換
+      // 現在の入力に追加（新しい音声認識の場合）
+      if (latestResult && latestResult !== transcript) {
+        setTranscript(latestResult);
+        setInput(prevInput => {
+          // 前のテキストが空なら新しいテキストをそのまま設定
+          if (!prevInput || prevInput === transcript) {
+            return latestResult;
+          }
+          // 既存のテキストがある場合は置き換え
+          return latestResult;
+        });
+      }
+      
+      console.log('🎤 音声認識結果:', latestResult);
     };
 
     recognition.onerror = (event) => {
@@ -63,6 +67,8 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
 
     recognition.onend = () => {
       setIsListening(false);
+      console.log('🎤 音声認識終了');
+      // 音声認識終了時はテキストを保持（送信まで残す）
     };
 
     recognitionRef.current = recognition;
@@ -78,9 +84,23 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
 
   const handleSend = () => {
     if (input.trim() && !isLoading) {
-      onSendMessage(input.trim());
+      const messageToSend = input.trim();
+      console.log('📤 送信メッセージ:', messageToSend);
+      
+      // まず送信
+      onSendMessage(messageToSend);
+      
+      // 送信成功後にクリア
       setInput('');
       setTranscript('');
+      console.log('✅ 入力フィールドをクリアしました');
+      
+      // 音声認識が動作中の場合も停止
+      if (isListening && recognitionRef.current) {
+        recognitionRef.current.stop();
+        setIsListening(false);
+        console.log('🎤 音声認識を停止しました');
+      }
     }
   };
 
