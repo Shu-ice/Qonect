@@ -15,6 +15,22 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const recognitionRef = useRef<any>(null);
+  const finalTranscriptRef = useRef<string>(''); // 確定済みテキストを保持
+  const isManuallyEditingRef = useRef<boolean>(false); // 手動編集中フラグ
+  const lastRecognizedTextRef = useRef<string>(''); // 最後に認識されたテキスト
+  const [isAutoVoiceMode, setIsAutoVoiceMode] = useState(true); // デフォルトで音声モード
+  
+  // 初期状態で音声入力を自動開始
+  React.useEffect(() => {
+    if (!disabled && !isLoading && isAutoVoiceMode) {
+      const timer = setTimeout(() => {
+        startVoiceRecording();
+        console.log('🎤 初期音声入力開始');
+      }, 1000); // 1秒後に開始
+      
+      return () => clearTimeout(timer);
+    }
+  }, [disabled, isLoading]); // disabled, isLoadingが変更されたら再実行
 
   const startVoiceRecording = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -31,33 +47,46 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
 
     recognition.onstart = () => {
       setIsListening(true);
-      // 録音開始時は前の内容を保持（送信後のみクリア）
-      console.log('🎤 音声認識開始');
+      // 録音開始時に既存の入力を確定済みテキストとして保存
+      finalTranscriptRef.current = input;
+      isManuallyEditingRef.current = false; // 手動編集フラグをリセット
+      lastRecognizedTextRef.current = input; // 現在の入力を基準に設定
+      console.log('🎤 音声認識開始、既存テキスト保持:', finalTranscriptRef.current);
     };
 
     recognition.onresult = (event) => {
-      let latestResult = '';
-      
-      // 最新の結果のみを取得（累積を避ける）
-      const lastResult = event.results[event.results.length - 1];
-      if (lastResult) {
-        latestResult = lastResult[0].transcript;
+      // 手動編集中は音声認識結果を無視
+      if (isManuallyEditingRef.current) {
+        console.log('🖊️ 手動編集中のため音声認識結果をスキップ');
+        return;
       }
 
-      // 現在の入力に追加（新しい音声認識の場合）
-      if (latestResult && latestResult !== transcript) {
-        setTranscript(latestResult);
-        setInput(prevInput => {
-          // 前のテキストが空なら新しいテキストをそのまま設定
-          if (!prevInput || prevInput === transcript) {
-            return latestResult;
-          }
-          // 既存のテキストがある場合は置き換え
-          return latestResult;
-        });
-      }
+      let finalTranscript = '';
+      let interimTranscript = '';
       
-      console.log('🎤 音声認識結果:', latestResult);
+      // すべての結果を処理して、確定済みと暫定を分離
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (result.isFinal) {
+          finalTranscript += result[0].transcript;
+        } else {
+          interimTranscript += result[0].transcript;
+        }
+      }
+
+      // 確定済みテキストがある場合は追加
+      if (finalTranscript) {
+        finalTranscriptRef.current += finalTranscript;
+        console.log('🎤 確定テキスト:', finalTranscript);
+      }
+
+      // 全体のテキストを更新（既存 + 確定済み + 暫定）
+      const fullText = finalTranscriptRef.current + interimTranscript;
+      lastRecognizedTextRef.current = fullText; // 最後の認識結果を保存
+      setInput(fullText);
+      setTranscript(interimTranscript); // 暫定テキストのみ表示用に保持
+      
+      console.log('🎤 全体テキスト:', fullText);
     };
 
     recognition.onerror = (event) => {
@@ -87,20 +116,33 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
       const messageToSend = input.trim();
       console.log('📤 送信メッセージ:', messageToSend);
       
-      // まず送信
-      onSendMessage(messageToSend);
-      
-      // 送信成功後にクリア
-      setInput('');
-      setTranscript('');
-      console.log('✅ 入力フィールドをクリアしました');
-      
-      // 音声認識が動作中の場合も停止
+      // 音声認識を完全に停止
       if (isListening && recognitionRef.current) {
         recognitionRef.current.stop();
         setIsListening(false);
-        console.log('🎤 音声認識を停止しました');
+        console.log('🎤 送信前に音声認識を停止');
       }
+      
+      // まず送信
+      onSendMessage(messageToSend);
+      
+      // 送信成功後に完全クリア
+      setTimeout(() => {
+        setInput('');
+        setTranscript('');
+        finalTranscriptRef.current = ''; 
+        isManuallyEditingRef.current = false; 
+        lastRecognizedTextRef.current = ''; 
+        console.log('✅ 入力フィールドを完全クリア');
+        
+        // デフォルト音声モードなら自動で音声入力開始
+        if (isAutoVoiceMode && !disabled) {
+          setTimeout(() => {
+            startVoiceRecording();
+            console.log('🎤 自動音声入力開始');
+          }, 500); // 少し遅らせて確実にクリア後に開始
+        }
+      }, 100); // 送信処理後に確実にクリア
     }
   };
 
@@ -119,12 +161,22 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={isListening ? stopVoiceRecording : startVoiceRecording}
+            onClick={() => {
+              if (isListening) {
+                stopVoiceRecording();
+                setIsAutoVoiceMode(false); // 手動で停止した場合は自動モード解除
+              } else {
+                startVoiceRecording();
+                setIsAutoVoiceMode(true); // 手動で開始した場合は自動モード有効
+              }
+            }}
             disabled={disabled || isLoading}
             className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${
               isListening
                 ? 'bg-red-500 hover:bg-red-600 text-white'
-                : 'bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-600 disabled:cursor-not-allowed'
+                : isAutoVoiceMode 
+                  ? 'bg-green-500 hover:bg-green-600 text-white disabled:bg-gray-600 disabled:cursor-not-allowed'
+                  : 'bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-600 disabled:cursor-not-allowed'
             }`}
           >
             {isListening ? (
@@ -138,8 +190,38 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
           <div className="flex-1">
             <textarea
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                setInput(newValue);
+                
+                // 手動編集を検出
+                if (isListening && newValue !== lastRecognizedTextRef.current) {
+                  isManuallyEditingRef.current = true;
+                  console.log('🖊️ 手動編集検出');
+                  
+                  // 音声認識を停止
+                  if (recognitionRef.current) {
+                    recognitionRef.current.stop();
+                    setIsListening(false);
+                    console.log('🎤 手動編集のため音声認識を停止');
+                  }
+                }
+              }}
               onKeyPress={handleKeyPress}
+              onFocus={() => {
+                // フォーカス時に手動モードに切り替え
+                if (isAutoVoiceMode) {
+                  setIsAutoVoiceMode(false);
+                  console.log('🖊️ 手動モードに切り替え');
+                }
+                
+                // 音声認識中なら停止
+                if (isListening && recognitionRef.current) {
+                  console.log('🖊️ テキストエリアフォーカス、音声認識停止');
+                  recognitionRef.current.stop();
+                  setIsListening(false);
+                }
+              }}
               placeholder={disabled ? "面接が終了しました" : "回答を入力してください..."}
               disabled={disabled || isLoading}
               rows={Math.max(1, Math.ceil(input.length / 50))}
