@@ -28,7 +28,7 @@ interface EssayContent {
 
 interface OptimizedInterviewChatProps {
   essayContent: EssayContent;
-  onSessionEnd: (messages: Message[]) => void;
+  onSessionEnd: (messages: Message[], duration?: number) => void;
 }
 
 export function OptimizedInterviewChat({ essayContent, onSessionEnd }: OptimizedInterviewChatProps) {
@@ -36,6 +36,7 @@ export function OptimizedInterviewChat({ essayContent, onSessionEnd }: Optimized
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [sessionStartTime] = useState(new Date());
+  const [sessionDuration, setSessionDuration] = useState(0);
   const [sessionEnded, setSessionEnded] = useState(false);
   const [typingMessageId, setTypingMessageId] = useState<string | null>(null);
   const [displayedContent, setDisplayedContent] = useState<Map<string, string>>(new Map());
@@ -140,6 +141,34 @@ export function OptimizedInterviewChat({ essayContent, onSessionEnd }: Optimized
 
       setMessages(prev => [...prev, aiMessage]);
       
+      // 面接終了チェック
+      if (data.interviewEnded) {
+        console.log('🏁 面接終了が検出されました');
+        // タイプライター効果完了まで待ってから終了処理
+        const messageLength = aiMessage.content.length;
+        const typingDuration = Math.min(messageLength * 50, 5000) + 2000; // 最大5秒 + バッファ2秒
+        console.log(`⏱️ ${typingDuration}ms後に評価画面へ移行`);
+        console.log('📊 最終メッセージ:', aiMessage.content);
+        
+        setTimeout(() => {
+          console.log('🚀 評価画面への遷移を実行');
+          // セッション時間を計算
+          const endTime = new Date();
+          const duration = Math.floor((endTime.getTime() - sessionStartTime.getTime()) / 1000);
+          
+          // 最新のmessagesを含めて評価画面に渡す（AIメッセージを含む）
+          const finalMessages = [...messages, aiMessage];
+          console.log('📤 評価画面に送るメッセージ数:', finalMessages.length);
+          console.log('⏱️ セッション時間:', duration, '秒');
+          
+          // セッション終了フラグを立てる
+          setSessionEnded(true);
+          
+          // 親コンポーネントに終了を通知（評価画面表示）
+          onSessionEnd(finalMessages, duration);
+        }, typingDuration);
+      }
+      
       // タイプライター効果を開始
       setTimeout(() => {
         typewriterEffect(aiMessage.id, aiMessage.content, 50);
@@ -187,8 +216,12 @@ export function OptimizedInterviewChat({ essayContent, onSessionEnd }: Optimized
   // セッション終了
   const handleEndSession = useCallback(() => {
     setSessionEnded(true);
-    onSessionEnd(messages);
-  }, [messages, onSessionEnd]);
+    // セッション時間を計算
+    const endTime = new Date();
+    const duration = Math.floor((endTime.getTime() - sessionStartTime.getTime()) / 1000);
+    
+    onSessionEnd(messages, duration);
+  }, [messages, onSessionEnd, sessionStartTime]);
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
@@ -244,33 +277,7 @@ export function OptimizedInterviewChat({ essayContent, onSessionEnd }: Optimized
         </motion.div>
       )}
 
-      {/* 終了時のオーバーレイ */}
-      {sessionEnded && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 flex items-center justify-center"
-        >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-3xl p-8 text-center max-w-md mx-4"
-          >
-            <h2 className="text-2xl font-bold mb-4">面接練習お疲れさまでした！</h2>
-            <p className="text-white/80 mb-6">
-              結果をダッシュボードで確認できます
-            </p>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => window.location.href = '/dashboard'}
-              className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors"
-            >
-              ダッシュボードへ戻る
-            </motion.button>
-          </motion.div>
-        </motion.div>
-      )}
+      {/* 終了時のオーバーレイは削除（評価画面に直接遷移） */}
     </div>
   );
 }

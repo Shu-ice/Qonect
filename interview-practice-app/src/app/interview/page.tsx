@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 // import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { ReflectionInterviewChat } from '@/components/features/interview/ReflectionInterviewChat';
+import { OptimizedInterviewChat } from '@/components/features/interview/OptimizedInterviewChat';
+import { InterviewEvaluationScreen } from '@/components/features/interview/evaluation/InterviewEvaluationScreen';
 import { PremiumCard } from '@/components/ui/PremiumCard';
 import { MascotCharacter } from '@/components/ui/MascotCharacter';
 import { Loader2, AlertCircle, FileText, ArrowLeft } from 'lucide-react';
@@ -37,6 +38,9 @@ export default function InterviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [interviewStarted, setInterviewStarted] = useState(false);
+  const [showEvaluation, setShowEvaluation] = useState(false);
+  const [interviewMessages, setInterviewMessages] = useState<Message[]>([]);
+  const [sessionDuration, setSessionDuration] = useState(0);
 
   useEffect(() => {
     // デバッグ用：認証をスキップしてデモデータを使用
@@ -106,12 +110,14 @@ export default function InterviewPage() {
     }
   };
 
-  const handleSessionEnd = (messages: Message[]) => {
+  const handleSessionEnd = (messages: Message[], duration?: number) => {
     // 面接結果を保存
     console.log('面接セッション終了:', messages);
     
-    // ダッシュボードに戻る
-    router.push('/dashboard');
+    // 評価画面を表示
+    setInterviewMessages(messages);
+    setSessionDuration(duration || 0);
+    setShowEvaluation(true);
   };
 
   const startInterview = () => {
@@ -285,9 +291,28 @@ export default function InterviewPage() {
     );
   }
 
+  // 評価画面の表示
+  if (showEvaluation) {
+    return (
+      <InterviewEvaluationScreen
+        messages={interviewMessages}
+        sessionDuration={sessionDuration}
+        onRetry={() => {
+          setShowEvaluation(false);
+          setInterviewStarted(true);
+          setInterviewMessages([]);
+          setSessionDuration(0);
+        }}
+        onBackToDashboard={() => {
+          router.push('/dashboard');
+        }}
+      />
+    );
+  }
+
   if (interviewStarted && essayContent) {
     return (
-      <ReflectionInterviewChat
+      <OptimizedInterviewChat
         essayContent={essayContent}
         onSessionEnd={handleSessionEnd}
       />

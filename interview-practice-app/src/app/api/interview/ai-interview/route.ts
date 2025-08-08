@@ -35,8 +35,17 @@ export async function POST(request: NextRequest) {
       h.content.includes('どのくらいかかりましたか') || 
       h.content.includes('時間はどのくらい')
     );
+    const hasAskedExploration = conversationHistory.some(h =>
+      h.content.includes('探究活動について') || 
+      h.content.includes('1分ほどで説明してください')
+    );
     
-    console.log('📊 会話段階:', { hasAskedTransport, hasAskedTime });
+    // 会話の数をカウント（面接時間の推定）
+    const conversationCount = conversationHistory.length;
+    const isNearTimeLimit = conversationCount >= 20; // 約15分相当
+    const shouldEnd = conversationCount >= 24; // 終了時間
+    
+    console.log('📊 会話段階:', { hasAskedTransport, hasAskedTime, hasAskedExploration, conversationCount, isNearTimeLimit, shouldEnd });
     
     const prompt = `You are an experienced Meiwa Middle School interviewer. A 6th grader just said something.
 
@@ -47,12 +56,22 @@ ${context}
 CURRENT STAGE:
 - Asked about transport: ${hasAskedTransport ? 'YES' : 'NO'}
 - Asked about time: ${hasAskedTime ? 'YES' : 'NO'}
-${hasAskedTransport && hasAskedTime ? '⚠️ MUST NOW ASK ABOUT EXPLORATION ACTIVITIES WITH "1分ほどで"' : ''}
+- Asked about exploration: ${hasAskedExploration ? 'YES' : 'NO'}
+- Conversation count: ${conversationCount}
+- Near time limit: ${isNearTimeLimit ? 'YES' : 'NO'}
+- Should end: ${shouldEnd ? 'YES' : 'NO'}
+
+${shouldEnd ? '🏁 END INTERVIEW: Say "それでは面接を終わります。本日はありがとうございました。"' : ''}
+${isNearTimeLimit && !shouldEnd ? '⏰ FINAL QUESTION: Ask about future goals or middle/high school life plans' : ''}
+${hasAskedTransport && hasAskedTime && !hasAskedExploration ? '⚠️ MUST NOW ASK ABOUT EXPLORATION ACTIVITIES WITH "1分ほどで"' : ''}
 
 Your task:
-1. FIRST: Check if the answer is inappropriate/joking/impossible
-2. IF INAPPROPRIATE: Gently but firmly ask them to answer seriously
-3. IF APPROPRIATE: Continue the interview naturally
+1. FIRST: Check if interview should end (conversation count >= 24)
+2. IF SHOULD END: End the interview politely
+3. IF NEAR TIME LIMIT: Ask final question about future goals
+4. THEN: Check if the answer is inappropriate/joking/impossible
+5. IF INAPPROPRIATE: Gently but firmly ask them to answer seriously
+6. IF APPROPRIATE: Continue the interview naturally
 
 CRITICAL RULES:
 - If they say fictional names (野比のぎた, 夏目漱石, etc.) → Ask for their real name
@@ -64,9 +83,15 @@ INTERVIEW FLOW (MUST follow exactly):
 1. Name → Ask "今日はどうやって来ましたか？" (TODAY's journey, not future commute)
 2. Transportation → Ask "どのくらいかかりましたか？" (time taken)
 3. Time → IMMEDIATELY ask "ありがとうございます。それでは、あなたがこれまで打ち込んできた探究活動について、1分ほどで説明してください。"
-4. Exploration activities → Deep dive into their activities
+4. Exploration activities → Deep dive into their activities (multiple follow-ups)
+5. Near time limit → Ask about "中学校・高校生活への豊富について" or "将来の目標について"
+6. Time up → End with "それでは面接を終わります。本日はありがとうございました。"
 
-CRITICAL: After hearing the time, MUST transition to exploration activities. NO other topics!
+CRITICAL: 
+- DON'T repeat the same question twice
+- After exploration activities, deep dive with follow-up questions
+- When near time limit, transition to future topics
+- End interview politely when time is up
 
 Response in natural Japanese. End with a question.
 
@@ -94,6 +119,8 @@ Return JSON:
         inappropriate: parsed.inappropriate || false,
         reason: parsed.reason,
         aiJudged: true,
+        interviewEnded: shouldEnd || parsed.question.includes('面接を終わります'),
+        conversationCount,
         timestamp: new Date().toISOString()
       });
       

@@ -18,21 +18,70 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
   const finalTranscriptRef = useRef<string>(''); // 確定済みテキストを保持
   const isManuallyEditingRef = useRef<boolean>(false); // 手動編集中フラグ
   const lastRecognizedTextRef = useRef<string>(''); // 最後に認識されたテキスト
-  const [isAutoVoiceMode, setIsAutoVoiceMode] = useState(true); // デフォルトで音声モード
+  const [isAutoVoiceMode, setIsAutoVoiceMode] = useState(true); // デフォルトで音声モード（赤）
+  const [isManualKeyboardMode, setIsManualKeyboardMode] = useState(false); // 手動キーボードモード（青）
   
-  // 初期状態で音声入力を自動開始
+  // コンポーネントアンマウント時のクリーンアップ
   React.useEffect(() => {
-    if (!disabled && !isLoading && isAutoVoiceMode) {
+    return () => {
+      // アンマウント時に音声認識を完全に停止
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+          recognitionRef.current.onresult = null;
+          recognitionRef.current.onend = null;
+          recognitionRef.current.onerror = null;
+          recognitionRef.current.onstart = null;
+        } catch (e) {
+          console.error('クリーンアップエラー:', e);
+        }
+        recognitionRef.current = null;
+      }
+      console.log('🧹 コンポーネントアンマウント - 音声認識クリーンアップ');
+    };
+  }, []);
+  
+  // 初期状態で音声入力を自動開始（キーボードモードでない場合のみ）
+  React.useEffect(() => {
+    if (!disabled && !isLoading && isAutoVoiceMode && !isManualKeyboardMode) {
       const timer = setTimeout(() => {
+        // 初期開始前にクリア
+        setInput('');
+        setTranscript('');
+        finalTranscriptRef.current = '';
+        lastRecognizedTextRef.current = '';
+        isManuallyEditingRef.current = false;
+        console.log('🧹 初期音声入力前にクリア');
+        
         startVoiceRecording();
         console.log('🎤 初期音声入力開始');
       }, 1000); // 1秒後に開始
       
       return () => clearTimeout(timer);
+    } else if (isManualKeyboardMode) {
+      console.log('📝 キーボードモードなので初期音声入力をスキップ');
     }
-  }, [disabled, isLoading]); // disabled, isLoadingが変更されたら再実行
+  }, [disabled, isLoading, isAutoVoiceMode, isManualKeyboardMode]);
 
   const startVoiceRecording = () => {
+    // キーボードモードの場合は音声認識を開始しない
+    if (isManualKeyboardMode) {
+      console.log('📝 キーボードモードなので音声認識をスキップ');
+      return;
+    }
+
+    // 既に音声認識が動作中なら停止してから再開
+    if (recognitionRef.current && isListening) {
+      console.log('⚠️ 既存の音声認識を停止してから再開');
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        console.error('既存の音声認識停止エラー:', e);
+      }
+      recognitionRef.current = null;
+      setIsListening(false);
+    }
+
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       alert('お使いのブラウザでは音声認識がサポートされていません');
       return;
@@ -47,17 +96,25 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
 
     recognition.onstart = () => {
       setIsListening(true);
-      // 録音開始時に既存の入力を確定済みテキストとして保存
-      finalTranscriptRef.current = input;
+      // 録音開始時は必ず完全にクリア（前の入力を保持しない）
+      finalTranscriptRef.current = '';
       isManuallyEditingRef.current = false; // 手動編集フラグをリセット
-      lastRecognizedTextRef.current = input; // 現在の入力を基準に設定
-      console.log('🎤 音声認識開始、既存テキスト保持:', finalTranscriptRef.current);
+      lastRecognizedTextRef.current = ''; // 基準もクリア
+      setInput(''); // 入力フィールドも完全にクリア
+      setTranscript(''); // 暫定テキストもクリア
+      console.log('🎤 音声認識開始 - 完全クリア実行');
     };
 
     recognition.onresult = (event) => {
-      // 手動編集中は音声認識結果を無視
-      if (isManuallyEditingRef.current) {
-        console.log('🖊️ 手動編集中のため音声認識結果をスキップ');
+      // キーボードモードまたは手動編集中は音声認識結果を無視
+      if (isManualKeyboardMode || isManuallyEditingRef.current) {
+        console.log('📝 キーボードモードまたは手動編集中のため音声認識結果をスキップ');
+        // 音声認識を停止
+        try {
+          recognition.stop();
+        } catch (e) {
+          console.error('音声認識停止エラー:', e);
+        }
         return;
       }
 
@@ -80,7 +137,7 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
         console.log('🎤 確定テキスト:', finalTranscript);
       }
 
-      // 全体のテキストを更新（既存 + 確定済み + 暫定）
+      // 全体のテキストを更新（確定済み + 暫定のみ、前の入力は含めない）
       const fullText = finalTranscriptRef.current + interimTranscript;
       lastRecognizedTextRef.current = fullText; // 最後の認識結果を保存
       setInput(fullText);
@@ -97,7 +154,14 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
     recognition.onend = () => {
       setIsListening(false);
       console.log('🎤 音声認識終了');
-      // 音声認識終了時はテキストを保持（送信まで残す）
+      // 音声認識終了時に参照をクリア（重要）
+      setTranscript('');
+      // 音声モードでない場合は参照もクリア
+      if (!isAutoVoiceMode || isManualKeyboardMode) {
+        finalTranscriptRef.current = '';
+        lastRecognizedTextRef.current = '';
+        console.log('📝 音声モードでないため参照クリア');
+      }
     };
 
     recognitionRef.current = recognition;
@@ -106,8 +170,23 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
 
   const stopVoiceRecording = () => {
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      try {
+        recognitionRef.current.stop();
+        recognitionRef.current.onresult = null; // イベントハンドラを解除
+        recognitionRef.current.onend = null;
+        recognitionRef.current.onerror = null;
+        recognitionRef.current.onstart = null;
+      } catch (e) {
+        console.error('音声認識停止エラー:', e);
+      }
+      recognitionRef.current = null; // 参照を完全に削除
       setIsListening(false);
+      // 停止時に参照をクリア
+      finalTranscriptRef.current = '';
+      lastRecognizedTextRef.current = '';
+      isManuallyEditingRef.current = false;
+      setTranscript('');
+      console.log('🛑 音声認識停止 - 完全クリーンアップ実行');
     }
   };
 
@@ -126,23 +205,30 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
       // まず送信
       onSendMessage(messageToSend);
       
-      // 送信成功後に完全クリア
-      setTimeout(() => {
-        setInput('');
-        setTranscript('');
-        finalTranscriptRef.current = ''; 
-        isManuallyEditingRef.current = false; 
-        lastRecognizedTextRef.current = ''; 
-        console.log('✅ 入力フィールドを完全クリア');
-        
-        // デフォルト音声モードなら自動で音声入力開始
-        if (isAutoVoiceMode && !disabled) {
-          setTimeout(() => {
-            startVoiceRecording();
-            console.log('🎤 自動音声入力開始');
-          }, 500); // 少し遅らせて確実にクリア後に開始
-        }
-      }, 100); // 送信処理後に確実にクリア
+      // 送信成功後に完全クリア（即座に実行）
+      setInput('');
+      setTranscript('');
+      finalTranscriptRef.current = ''; 
+      isManuallyEditingRef.current = false; 
+      lastRecognizedTextRef.current = ''; 
+      console.log('✅ 送信直後に入力フィールドを完全クリア');
+      
+      // デフォルト音声モードかつキーボードモードでない場合のみ自動再開
+      if (isAutoVoiceMode && !isManualKeyboardMode && !disabled) {
+        setTimeout(() => {
+          // 再開前に再度クリア（念のため）
+          setInput('');
+          setTranscript('');
+          finalTranscriptRef.current = '';
+          lastRecognizedTextRef.current = '';
+          isManuallyEditingRef.current = false;
+          
+          startVoiceRecording();
+          console.log('🎤 自動音声入力開始（キーボードモードではない）');
+        }, 500); // 少し遅らせて確実にクリア後に開始
+      } else {
+        console.log('📝 キーボードモードなので音声入力自動開始をスキップ');
+      }
     }
   };
 
@@ -163,20 +249,34 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
             whileTap={{ scale: 0.95 }}
             onClick={() => {
               if (isListening) {
+                // 音声認識停止
                 stopVoiceRecording();
-                setIsAutoVoiceMode(false); // 手動で停止した場合は自動モード解除
+                setIsAutoVoiceMode(false);
+                setIsManualKeyboardMode(true);
+                console.log('🎤 音声ボタンクリック - キーボードモードに切り替え');
               } else {
+                // 音声認識開始前に入力をクリア
+                setInput('');
+                setTranscript('');
+                finalTranscriptRef.current = '';
+                lastRecognizedTextRef.current = '';
+                isManuallyEditingRef.current = false;
+                console.log('🧹 音声開始前に入力をクリア');
+                
+                // 音声認識開始
                 startVoiceRecording();
-                setIsAutoVoiceMode(true); // 手動で開始した場合は自動モード有効
+                setIsAutoVoiceMode(true);
+                setIsManualKeyboardMode(false);
+                console.log('🎤 音声ボタンクリック - 音声モードに切り替え');
               }
             }}
             disabled={disabled || isLoading}
             className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${
               isListening
-                ? 'bg-red-500 hover:bg-red-600 text-white'
-                : isAutoVoiceMode 
-                  ? 'bg-green-500 hover:bg-green-600 text-white disabled:bg-gray-600 disabled:cursor-not-allowed'
-                  : 'bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-600 disabled:cursor-not-allowed'
+                ? 'bg-red-500 hover:bg-red-600 text-white' // 赤：音声認識中
+                : isManualKeyboardMode || !isAutoVoiceMode
+                  ? 'bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-600 disabled:cursor-not-allowed' // 青：キーボードモード
+                  : 'bg-red-400 hover:bg-red-500 text-white disabled:bg-gray-600 disabled:cursor-not-allowed' // 赤：音声モード待機
             }`}
           >
             {isListening ? (
@@ -194,32 +294,49 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
                 const newValue = e.target.value;
                 setInput(newValue);
                 
-                // 手動編集を検出
-                if (isListening && newValue !== lastRecognizedTextRef.current) {
+                // 手動編集を検出（キーボードモードに切り替え）
+                if (isListening) {
                   isManuallyEditingRef.current = true;
-                  console.log('🖊️ 手動編集検出');
+                  setIsAutoVoiceMode(false);
+                  setIsManualKeyboardMode(true);
+                  console.log('🖊️ 手動編集検出 - キーボードモードに切り替え');
                   
-                  // 音声認識を停止
+                  // 音声認識を停止して参照をクリア
                   if (recognitionRef.current) {
                     recognitionRef.current.stop();
                     setIsListening(false);
-                    console.log('🎤 手動編集のため音声認識を停止');
+                    // 参照を完全にクリア
+                    finalTranscriptRef.current = '';
+                    lastRecognizedTextRef.current = '';
+                    setTranscript('');
+                    console.log('🎤 手動編集のため音声認識を停止、参照クリア');
                   }
+                }
+                
+                // 手動編集中は参照を更新しない
+                if (!isListening) {
+                  finalTranscriptRef.current = '';
+                  lastRecognizedTextRef.current = newValue;
                 }
               }}
               onKeyPress={handleKeyPress}
               onFocus={() => {
-                // フォーカス時に手動モードに切り替え
-                if (isAutoVoiceMode) {
-                  setIsAutoVoiceMode(false);
-                  console.log('🖊️ 手動モードに切り替え');
-                }
+                console.log('📝 テキストエリアフォーカス - キーボードモードに切り替え');
                 
-                // 音声認識中なら停止
+                // フォーカス時にキーボードモードに切り替え
+                setIsAutoVoiceMode(false);
+                setIsManualKeyboardMode(true);
+                
+                // 音声認識中なら停止して参照をクリア
                 if (isListening && recognitionRef.current) {
-                  console.log('🖊️ テキストエリアフォーカス、音声認識停止');
+                  console.log('🔊️ キーボードモードに切り替え、音声認識停止');
                   recognitionRef.current.stop();
                   setIsListening(false);
+                  // 参照をクリア（重要）
+                  finalTranscriptRef.current = '';
+                  lastRecognizedTextRef.current = '';
+                  isManuallyEditingRef.current = false;
+                  setTranscript('');
                 }
               }}
               placeholder={disabled ? "面接が終了しました" : "回答を入力してください..."}
@@ -244,6 +361,26 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
                 )}
               </motion.div>
             )}
+            
+            {/* モード表示 */}
+            <div className="mt-2 flex items-center justify-between text-xs text-white/60">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${
+                  isListening ? 'bg-red-400 animate-pulse' :
+                  isManualKeyboardMode ? 'bg-blue-400' : 'bg-red-400'
+                }`} />
+                <span>
+                  {isListening ? '音声認識中' :
+                   isManualKeyboardMode ? 'キーボードモード' : '音声モード'}
+                </span>
+              </div>
+              <div className="text-right">
+                {isManualKeyboardMode ? 
+                  'マイクボタンで音声モードに戻る' :
+                  'テキストエリアタップでキーボードモード'
+                }
+              </div>
+            </div>
           </div>
 
           {/* 送信ボタン */}
