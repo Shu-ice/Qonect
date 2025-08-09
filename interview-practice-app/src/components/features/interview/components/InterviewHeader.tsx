@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { Clock, X } from 'lucide-react';
+import { Clock, X, AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface InterviewHeaderProps {
   sessionStartTime: Date;
@@ -12,6 +12,7 @@ interface InterviewHeaderProps {
 
 export function InterviewHeader({ sessionStartTime, onEndSession }: InterviewHeaderProps) {
   const [elapsedTime, setElapsedTime] = React.useState('00:00');
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   React.useEffect(() => {
     const updateElapsedTime = () => {
@@ -29,7 +30,8 @@ export function InterviewHeader({ sessionStartTime, onEndSession }: InterviewHea
   }, [sessionStartTime]);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-2xl border-b border-white/10">
+    <>
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-2xl border-b border-white/10">
       <div className="max-w-6xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* ロゴ */}
@@ -58,7 +60,7 @@ export function InterviewHeader({ sessionStartTime, onEndSession }: InterviewHea
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={onEndSession}
+            onClick={() => setShowConfirmDialog(true)}
             className="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 text-red-400 rounded-full transition-all duration-300"
           >
             <X className="w-4 h-4" />
@@ -66,6 +68,72 @@ export function InterviewHeader({ sessionStartTime, onEndSession }: InterviewHea
           </motion.button>
         </div>
       </div>
-    </nav>
+      </nav>
+
+      {/* 終了確認ダイアログ */}
+      <AnimatePresence>
+        {showConfirmDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60]"
+            onClick={() => setShowConfirmDialog(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-3xl p-8 max-w-md mx-4 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-yellow-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-1">面接を終了しますか？</h3>
+                  <p className="text-white/60 text-sm">途中で終了しても評価結果を表示します</p>
+                </div>
+              </div>
+              
+              <div className="bg-blue-500/10 border border-blue-400/20 rounded-2xl p-4 mb-6">
+                <div className="flex items-center gap-2 text-blue-400 mb-2">
+                  <CheckCircle className="w-4 h-4" />
+                  <span className="text-sm font-medium">終了後の処理</span>
+                </div>
+                <ul className="text-sm text-white/80 space-y-1 ml-6">
+                  <li>• 現在までの会話を分析します</li>
+                  <li>• 6軸評価でフィードバックを提供</li>
+                  <li>• 改善点と提案を表示します</li>
+                </ul>
+              </div>
+              
+              <div className="flex gap-3 justify-end">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowConfirmDialog(false)}
+                  className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all duration-300 border border-white/20"
+                >
+                  続ける
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setShowConfirmDialog(false);
+                    onEndSession();
+                  }}
+                  className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-2xl transition-all duration-300 shadow-lg"
+                >
+                  終了する
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

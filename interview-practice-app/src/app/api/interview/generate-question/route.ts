@@ -107,17 +107,27 @@ async function generateReflectiveQuestion(
 Previous question: "${question}"
 Student response: "${answer}"
 
-Generate ONE natural follow-up question in Japanese based on student's answer.
+Generate ONE natural follow-up response in Japanese based on student's answer.
 
 CRITICAL RULES:
 1. MUST end with question mark (？)
 2. MUST relate to student's actual answer content  
-3. Maximum 30 Japanese characters
-4. Use polite form for elementary students
-5. NO generic questions - SPECIFIC to their answer
+3. Use polite form for elementary students
+4. NO generic questions - SPECIFIC to their answer
+5. ALWAYS start with acknowledgment/empathy (相槌や共感)
+6. ASK ONLY ONE QUESTION (質問は1つだけ)
+7. Structure: [相槌/共感] + [1つの質問]
+8. Show warmth and understanding - NOT robotic
 
-Examples:
-Q: "Name and number?" → A: "1234 Tanaka Taro" → Next: "田中さん、ありがとうございます。どうやって来ましたか？"
+Examples of GOOD responses (with empathy + single question):
+✅ "なるほど、そうだったんですね。どのような工夫をされましたか？"
+✅ "素晴らしい取り組みですね。なぜそう思ったのですか？" 
+✅ "興味深いお話ですね。具体的にはどんな活動でしたか？"
+
+Examples of BAD responses:
+❌ "どのような工夫をされましたか？" (相槌なし、淡泊)
+❌ "どのような工夫をされましたか？また、学んだことは何ですか？" (複数質問)
+❌ "はい。次の質問です。" (機械的すぎる)
 
 Return ONLY JSON:
 {"question": "Japanese question here", "reasoning": "why this question"}`;

@@ -144,29 +144,50 @@ export function OptimizedInterviewChat({ essayContent, onSessionEnd }: Optimized
       // 面接終了チェック
       if (data.interviewEnded) {
         console.log('🏁 面接終了が検出されました');
-        // タイプライター効果完了まで待ってから終了処理
+        console.log('📊 AI最終メッセージ:', aiMessage.content);
+        
+        // タイプライター効果を考慮した遅延時間を計算
         const messageLength = aiMessage.content.length;
-        const typingDuration = Math.min(messageLength * 50, 5000) + 2000; // 最大5秒 + バッファ2秒
-        console.log(`⏱️ ${typingDuration}ms後に評価画面へ移行`);
-        console.log('📊 最終メッセージ:', aiMessage.content);
+        const baseTypingDuration = Math.min(messageLength * 50, 5000); // 基本タイピング時間
+        const bufferTime = 3000; // バッファー時間を増やして確実に待つ
+        const totalDelay = baseTypingDuration + bufferTime;
+        
+        console.log(`⏱️ タイピング時間: ${baseTypingDuration}ms, バッファ: ${bufferTime}ms, 合計: ${totalDelay}ms`);
+        console.log('🚀 評価画面への遷移をスケジュール');
+        
+        // セッション終了フラグを立てる（新しいメッセージの受け付けを停止）
+        setSessionEnded(true);
         
         setTimeout(() => {
-          console.log('🚀 評価画面への遷移を実行');
+          console.log('📤 評価画面への遷移を実行中...');
+          
           // セッション時間を計算
           const endTime = new Date();
-          const duration = Math.floor((endTime.getTime() - sessionStartTime.getTime()) / 1000);
+          const sessionDurationInSeconds = Math.floor((endTime.getTime() - sessionStartTime.getTime()) / 1000);
           
-          // 最新のmessagesを含めて評価画面に渡す（AIメッセージを含む）
+          // 最新のメッセージ配列を作成（AIメッセージを含む）
           const finalMessages = [...messages, aiMessage];
-          console.log('📤 評価画面に送るメッセージ数:', finalMessages.length);
-          console.log('⏱️ セッション時間:', duration, '秒');
           
-          // セッション終了フラグを立てる
-          setSessionEnded(true);
+          console.log('📤 評価データ:');
+          console.log('  - メッセージ数:', finalMessages.length);
+          console.log('  - セッション時間:', sessionDurationInSeconds, '秒');
+          console.log('  - 最終AIメッセージ:', aiMessage.content.substring(0, 50) + '...');
           
           // 親コンポーネントに終了を通知（評価画面表示）
-          onSessionEnd(finalMessages, duration);
-        }, typingDuration);
+          console.log('🚀 onSessionEndを呼び出し中...');
+          console.log('📤 onSessionEndに渡すデータ:');
+          console.log('  - finalMessages:', finalMessages);
+          console.log('  - sessionDurationInSeconds:', sessionDurationInSeconds);
+          
+          try {
+            onSessionEnd(finalMessages, sessionDurationInSeconds);
+            console.log('✅ onSessionEnd呼び出し成功');
+          } catch (error) {
+            console.error('❌ onSessionEnd呼び出しエラー:', error);
+          }
+          
+          console.log('✅ 評価画面遷移処理完了');
+        }, totalDelay);
       }
       
       // タイプライター効果を開始
@@ -215,12 +236,25 @@ export function OptimizedInterviewChat({ essayContent, onSessionEnd }: Optimized
 
   // セッション終了
   const handleEndSession = useCallback(() => {
+    console.log('🔴 手動セッション終了がリクエストされました');
+    
     setSessionEnded(true);
+    
     // セッション時間を計算
     const endTime = new Date();
     const duration = Math.floor((endTime.getTime() - sessionStartTime.getTime()) / 1000);
     
-    onSessionEnd(messages, duration);
+    console.log('📤 手動終了データ:');
+    console.log('  - メッセージ数:', messages.length);
+    console.log('  - セッション時間:', duration, '秒');
+    
+    console.log('🚀 手動終了のonSessionEndを呼び出し...');
+    try {
+      onSessionEnd(messages, duration);
+      console.log('✅ 手動終了のonSessionEnd呼び出し成功');
+    } catch (error) {
+      console.error('❌ 手動終了のonSessionEnd呼び出しエラー:', error);
+    }
   }, [messages, onSessionEnd, sessionStartTime]);
 
   return (

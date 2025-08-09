@@ -45,13 +45,15 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
   React.useEffect(() => {
     if (!disabled && !isLoading && isAutoVoiceMode && !isManualKeyboardMode) {
       const timer = setTimeout(() => {
-        // 初期開始前にクリア
-        setInput('');
-        setTranscript('');
-        finalTranscriptRef.current = '';
-        lastRecognizedTextRef.current = '';
-        isManuallyEditingRef.current = false;
-        console.log('🧹 初期音声入力前にクリア');
+        // 初期開始時のみクリア（会話の最初だけ）
+        if (!input) {
+          setInput('');
+          setTranscript('');
+          finalTranscriptRef.current = '';
+          lastRecognizedTextRef.current = '';
+          isManuallyEditingRef.current = false;
+          console.log('🧹 初期音声入力前にクリア');
+        }
         
         startVoiceRecording();
         console.log('🎤 初期音声入力開始');
@@ -96,13 +98,11 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
 
     recognition.onstart = () => {
       setIsListening(true);
-      // 録音開始時は必ず完全にクリア（前の入力を保持しない）
-      finalTranscriptRef.current = '';
+      // 音声認識開始時、既存の入力は保持する
+      // finalTranscriptRef.currentには既に入力内容が設定されている
       isManuallyEditingRef.current = false; // 手動編集フラグをリセット
-      lastRecognizedTextRef.current = ''; // 基準もクリア
-      setInput(''); // 入力フィールドも完全にクリア
-      setTranscript(''); // 暫定テキストもクリア
-      console.log('🎤 音声認識開始 - 完全クリア実行');
+      setTranscript(''); // 暫定テキストのみクリア
+      console.log('🎤 音声認識開始 - 既存入力保持:', finalTranscriptRef.current);
     };
 
     recognition.onresult = (event) => {
@@ -133,11 +133,15 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
 
       // 確定済みテキストがある場合は追加
       if (finalTranscript) {
+        // 既存のテキストがある場合はスペースを追加してから音声認識結果を追加
+        if (finalTranscriptRef.current && !finalTranscriptRef.current.endsWith(' ')) {
+          finalTranscriptRef.current += ' ';
+        }
         finalTranscriptRef.current += finalTranscript;
-        console.log('🎤 確定テキスト:', finalTranscript);
+        console.log('🎤 確定テキスト追加:', finalTranscript);
       }
 
-      // 全体のテキストを更新（確定済み + 暫定のみ、前の入力は含めない）
+      // 全体のテキストを更新（既存テキスト + 新規音声認識結果）
       const fullText = finalTranscriptRef.current + interimTranscript;
       lastRecognizedTextRef.current = fullText; // 最後の認識結果を保存
       setInput(fullText);
@@ -255,19 +259,22 @@ export function InterviewInput({ onSendMessage, isLoading, disabled }: Interview
                 setIsManualKeyboardMode(true);
                 console.log('🎤 音声ボタンクリック - キーボードモードに切り替え');
               } else {
-                // 音声認識開始前に入力をクリア
-                setInput('');
-                setTranscript('');
-                finalTranscriptRef.current = '';
-                lastRecognizedTextRef.current = '';
-                isManuallyEditingRef.current = false;
-                console.log('🧹 音声開始前に入力をクリア');
+                // 音声認識開始（入力内容は保持）
+                const currentInput = input; // 現在の入力内容を保存
                 
                 // 音声認識開始
-                startVoiceRecording();
                 setIsAutoVoiceMode(true);
                 setIsManualKeyboardMode(false);
-                console.log('🎤 音声ボタンクリック - 音声モードに切り替え');
+                
+                // 既存の入力内容を参照に設定（クリアしない）
+                finalTranscriptRef.current = currentInput;
+                lastRecognizedTextRef.current = currentInput;
+                isManuallyEditingRef.current = false;
+                
+                console.log('🎤 音声ボタンクリック - 音声モードに切り替え（入力内容保持: ', currentInput, '）');
+                
+                // 音声認識を開始（入力はクリアしない）
+                startVoiceRecording();
               }
             }}
             disabled={disabled || isLoading}

@@ -24,18 +24,18 @@ export async function POST(request: NextRequest) {
     });
     
     // 会話履歴
-    const context = conversationHistory.map(h => `${h.role === 'interviewer' ? '面接官' : '受検生'}: ${h.content}`).join('\n');
+    const context = conversationHistory.map((h: any) => `${h.role === 'interviewer' ? '面接官' : '受検生'}: ${h.content}`).join('\n');
     
     // 会話段階を検出
-    const hasAskedTransport = conversationHistory.some(h => 
+    const hasAskedTransport = conversationHistory.some((h: any) => 
       h.content.includes('どうやって来ましたか') || 
       h.content.includes('どのようにして来ましたか')
     );
-    const hasAskedTime = conversationHistory.some(h => 
+    const hasAskedTime = conversationHistory.some((h: any) => 
       h.content.includes('どのくらいかかりましたか') || 
       h.content.includes('時間はどのくらい')
     );
-    const hasAskedExploration = conversationHistory.some(h =>
+    const hasAskedExploration = conversationHistory.some((h: any) =>
       h.content.includes('探究活動について') || 
       h.content.includes('1分ほどで説明してください')
     );
@@ -71,7 +71,13 @@ Your task:
 3. IF NEAR TIME LIMIT: Ask final question about future goals
 4. THEN: Check if the answer is inappropriate/joking/impossible
 5. IF INAPPROPRIATE: Gently but firmly ask them to answer seriously
-6. IF APPROPRIATE: Continue the interview naturally
+6. IF APPROPRIATE: Continue the interview naturally with ONE question
+
+IMPORTANT - ONE QUESTION RULE:
+❌ BAD: "どのような工夫をされたのでしょうか？また、一番学んだことは何ですか？"
+✅ GOOD: "どのような工夫をされたのでしょうか？"
+❌ BAD: "なぜそう思いましたか？そして、どう感じましたか？"
+✅ GOOD: "なぜそう思いましたか？"
 
 CRITICAL RULES:
 - If they say fictional names (野比のぎた, 夏目漱石, etc.) → Ask for their real name
@@ -92,8 +98,22 @@ CRITICAL:
 - After exploration activities, deep dive with follow-up questions
 - When near time limit, transition to future topics
 - End interview politely when time is up
+- IMPORTANT: Ask ONLY ONE question at a time (質問は1つずつ)
+- BUT ALWAYS include natural reactions and acknowledgments before the question
+- Show empathy and understanding of their answer (相槌や共感は必須)
+- NEVER combine multiple questions with "また、～は？" or "そして、～は？"
+- Structure: [相槌/共感] + [1つの質問]
 
-Response in natural Japanese. End with a question.
+GOOD EXAMPLES:
+✅ "歩いてきたんですね、お近くにお住まいなんですね。どのくらいかかりましたか？"
+✅ "なるほど、素晴らしい探究活動ですね。特にどのような工夫をされたのでしょうか？"
+✅ "2分ですか、本当にお近くですね。それでは、これまで打ち込んできた探究活動について、1分ほどで説明してください。"
+
+BAD EXAMPLES:
+❌ "どのくらいかかりましたか？" (相槌なし、淡泊すぎる)
+❌ "どのような工夫をされましたか？また、学んだことは何ですか？" (複数質問)
+
+Response in natural Japanese with empathy. End with ONE question only.
 
 Return JSON:
 {"question": "Your response in Japanese", "inappropriate": true/false, "reason": "why"}`;

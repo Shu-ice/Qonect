@@ -59,7 +59,17 @@ export function InterviewEvaluationScreen({
     const fetchEvaluation = async () => {
       try {
         setIsLoading(true);
+        
+        // 短いセッションの判定
+        const studentMessages = messages.filter(m => m.role === 'student');
+        const isShortSession = studentMessages.length < 3;
+        const isVeryShortSession = studentMessages.length < 2;
+        
         console.log('📊 面接評価を取得中...');
+        console.log('  - 学生メッセージ数:', studentMessages.length);
+        console.log('  - セッション時間:', sessionDuration, '秒');
+        console.log('  - 短いセッション:', isShortSession);
+        console.log('  - 非常に短いセッション:', isVeryShortSession);
         
         const response = await fetch('/api/interview/evaluate', {
           method: 'POST',
@@ -182,6 +192,39 @@ export function InterviewEvaluationScreen({
 
         {evaluationData && (
           <div className="space-y-8">
+            {/* 短いセッションの場合の注意書き */}
+            {(() => {
+              const studentMessages = messages.filter(m => m.role === 'student');
+              const isShortSession = studentMessages.length < 3;
+              const isVeryShortSession = studentMessages.length < 2;
+              
+              if (isVeryShortSession || isShortSession) {
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-yellow-500/10 border border-yellow-400/20 rounded-3xl p-6"
+                  >
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 rounded-full bg-yellow-400/20 flex items-center justify-center">
+                        <span className="text-yellow-400 text-lg">⚠️</span>
+                      </div>
+                      <h3 className="text-lg font-bold text-yellow-400">
+                        {isVeryShortSession ? '面接時間が非常に短いセッション' : '面接時間が短いセッション'}
+                      </h3>
+                    </div>
+                    <p className="text-white/80 leading-relaxed">
+                      {isVeryShortSession 
+                        ? '面接時間が非常に短かったため、限定的な評価となります。より詳細な評価を受けるには、もう少し長い時間面接を受けることをお勧めします。'
+                        : '面接が途中で終了したため、限定的な評価となります。より詳細で正確な評価を受けるには、完全な面接セッションを受けることをお勧めします。'
+                      }
+                    </p>
+                  </motion.div>
+                );
+              }
+              return null;
+            })()}
+
             {/* 総合評価 */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
