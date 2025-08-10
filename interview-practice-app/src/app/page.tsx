@@ -92,7 +92,7 @@ export default function HomePage() {
                 </motion.button>
               </Link>
               
-              <Link href="/interview-direct">
+              <Link href="/interview">
                 <motion.button
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}

@@ -10,7 +10,7 @@ export default function SimpleDashboardPage() {
         <h1 className="text-4xl font-bold mb-8">ダッシュボード</h1>
         
         <div className="grid gap-6">
-          <Link href="/interview-direct">
+          <Link href="/interview">
             <div className="p-6 bg-blue-500 hover:bg-blue-600 rounded-xl cursor-pointer transition-colors">
               <h2 className="text-2xl font-bold mb-2">🎤 音声練習</h2>
               <p className="text-white/90">面接練習を今すぐ開始</p>

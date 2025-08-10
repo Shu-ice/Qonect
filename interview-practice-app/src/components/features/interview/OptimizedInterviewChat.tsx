@@ -146,6 +146,9 @@ export function OptimizedInterviewChat({ essayContent, onSessionEnd }: Optimized
         console.log('🏁 面接終了が検出されました');
         console.log('📊 AI最終メッセージ:', aiMessage.content);
         
+        // セッション終了フラグを立てる（新しいメッセージの受け付けを停止）
+        setSessionEnded(true);
+        
         // タイプライター効果を考慮した遅延時間を計算
         const messageLength = aiMessage.content.length;
         const baseTypingDuration = Math.min(messageLength * 50, 5000); // 基本タイピング時間
@@ -155,39 +158,33 @@ export function OptimizedInterviewChat({ essayContent, onSessionEnd }: Optimized
         console.log(`⏱️ タイピング時間: ${baseTypingDuration}ms, バッファ: ${bufferTime}ms, 合計: ${totalDelay}ms`);
         console.log('🚀 評価画面への遷移をスケジュール');
         
-        // セッション終了フラグを立てる（新しいメッセージの受け付けを停止）
-        setSessionEnded(true);
+        // セッション時間を計算
+        const endTime = new Date();
+        const sessionDurationInSeconds = Math.floor((endTime.getTime() - sessionStartTime.getTime()) / 1000);
         
-        setTimeout(() => {
-          console.log('📤 評価画面への遷移を実行中...');
-          
-          // セッション時間を計算
-          const endTime = new Date();
-          const sessionDurationInSeconds = Math.floor((endTime.getTime() - sessionStartTime.getTime()) / 1000);
-          
-          // 最新のメッセージ配列を作成（AIメッセージを含む）
-          const finalMessages = [...messages, aiMessage];
-          
-          console.log('📤 評価データ:');
-          console.log('  - メッセージ数:', finalMessages.length);
-          console.log('  - セッション時間:', sessionDurationInSeconds, '秒');
-          console.log('  - 最終AIメッセージ:', aiMessage.content.substring(0, 50) + '...');
-          
-          // 親コンポーネントに終了を通知（評価画面表示）
-          console.log('🚀 onSessionEndを呼び出し中...');
-          console.log('📤 onSessionEndに渡すデータ:');
-          console.log('  - finalMessages:', finalMessages);
-          console.log('  - sessionDurationInSeconds:', sessionDurationInSeconds);
-          
-          try {
-            onSessionEnd(finalMessages, sessionDurationInSeconds);
-            console.log('✅ onSessionEnd呼び出し成功');
-          } catch (error) {
-            console.error('❌ onSessionEnd呼び出しエラー:', error);
-          }
-          
-          console.log('✅ 評価画面遷移処理完了');
-        }, totalDelay);
+        // 最新のメッセージ配列を作成（AIメッセージを含む）
+        const finalMessages = [...messages, aiMessage];
+        
+        console.log('📤 評価データ:');
+        console.log('  - メッセージ数:', finalMessages.length);
+        console.log('  - セッション時間:', sessionDurationInSeconds, '秒');
+        console.log('  - 最終AIメッセージ:', aiMessage.content.substring(0, 50) + '...');
+        
+        // 即座にonSessionEndを呼び出し（遅延を避ける）
+        console.log('🚀 onSessionEndを即座に呼び出し中...');
+        console.log('📤 onSessionEndに渡すデータ:');
+        console.log('  - finalMessages:', finalMessages);
+        console.log('  - sessionDurationInSeconds:', sessionDurationInSeconds);
+        
+        try {
+          // 即座に親コンポーネントに通知
+          onSessionEnd(finalMessages, sessionDurationInSeconds);
+          console.log('✅ onSessionEnd呼び出し成功');
+        } catch (error) {
+          console.error('❌ onSessionEnd呼び出しエラー:', error);
+        }
+        
+        console.log('✅ 評価画面遷移処理完了');
       }
       
       // タイプライター効果を開始
@@ -237,6 +234,12 @@ export function OptimizedInterviewChat({ essayContent, onSessionEnd }: Optimized
   // セッション終了
   const handleEndSession = useCallback(() => {
     console.log('🔴 手動セッション終了がリクエストされました');
+    console.log('📊 現在のメッセージ:', messages);
+    console.log('  - メッセージ数:', messages.length);
+    
+    if (messages.length === 0) {
+      console.warn('⚠️ メッセージが空です。初期メッセージを含めます。');
+    }
     
     setSessionEnded(true);
     
@@ -247,10 +250,13 @@ export function OptimizedInterviewChat({ essayContent, onSessionEnd }: Optimized
     console.log('📤 手動終了データ:');
     console.log('  - メッセージ数:', messages.length);
     console.log('  - セッション時間:', duration, '秒');
+    console.log('  - 最初のメッセージ:', messages[0]?.content?.substring(0, 50));
+    console.log('  - 最後のメッセージ:', messages[messages.length - 1]?.content?.substring(0, 50));
     
     console.log('🚀 手動終了のonSessionEndを呼び出し...');
     try {
-      onSessionEnd(messages, duration);
+      // 現在のメッセージ配列を確実に渡す
+      onSessionEnd([...messages], duration);
       console.log('✅ 手動終了のonSessionEnd呼び出し成功');
     } catch (error) {
       console.error('❌ 手動終了のonSessionEnd呼び出しエラー:', error);

@@ -37,8 +37,9 @@ export default function InterviewPage() {
   const [essayContent, setEssayContent] = useState<EssayContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [interviewStarted, setInterviewStarted] = useState(false);
-  const [showEvaluation, setShowEvaluation] = useState(false);
+  
+  // ページの状態を管理する単一のstate
+  const [pageState, setPageState] = useState<'start' | 'interview' | 'evaluation'>('start');
   const [interviewMessages, setInterviewMessages] = useState<Message[]>([]);
   const [sessionDuration, setSessionDuration] = useState(0);
   
@@ -47,12 +48,16 @@ export default function InterviewPage() {
     console.log('📊 InterviewPage 状態更新:');
     console.log('  - loading:', loading);
     console.log('  - error:', error);
-    console.log('  - interviewStarted:', interviewStarted);
-    console.log('  - showEvaluation:', showEvaluation);
+    console.log('  - pageState:', pageState);
     console.log('  - interviewMessages.length:', interviewMessages.length);
     console.log('  - sessionDuration:', sessionDuration);
     console.log('  - essayContent:', essayContent ? 'あり' : 'なし');
-  }, [loading, error, interviewStarted, showEvaluation, interviewMessages, sessionDuration, essayContent]);
+    
+    // 評価画面表示状態の確認
+    if (pageState === 'evaluation' && interviewMessages.length > 0) {
+      console.log('✅ 評価画面表示条件が整っています');
+    }
+  }, [loading, error, pageState, interviewMessages, sessionDuration, essayContent]);
 
   useEffect(() => {
     // デバッグ用：認証をスキップしてデモデータを使用
@@ -122,49 +127,54 @@ export default function InterviewPage() {
     }
   };
 
-  const handleSessionEnd = (messages: Message[], duration?: number) => {
+  const handleSessionEnd = React.useCallback((messages: Message[], duration?: number) => {
+    console.log('🎯 [NEW] handleSessionEndが呼び出されました');
+    console.log('📊 現在の状態:');
+    console.log('  - pageState:', pageState);
+    console.log('  - interviewMessages.length:', interviewMessages.length);
+    
+    // 二重実行防止
+    if (pageState === 'evaluation') {
+      console.log('⚠️ 既に評価画面表示中のためスキップ');
+      return;
+    }
+    
     console.log('🎯 面接セッション終了処理開始');
     console.log('📊 受信データ:');
     console.log('  - メッセージ数:', messages.length);
     console.log('  - セッション時間:', duration, '秒');
-    console.log('  - 最後のメッセージ:', messages[messages.length - 1]?.content?.substring(0, 50) + '...');
     
-    console.log('📊 現在の状態（変更前）:');
-    console.log('  - showEvaluation:', showEvaluation);
-    console.log('  - interviewStarted:', interviewStarted);
-    console.log('  - interviewMessages.length:', interviewMessages.length);
+    if (messages.length === 0) {
+      console.error('❌ メッセージが空です！');
+      return;
+    }
     
-    // 面接結果を保存
+    console.log('  - 最初のメッセージ:', messages[0]?.content?.substring(0, 50));
+    console.log('  - 最後のメッセージ:', messages[messages.length - 1]?.content?.substring(0, 50));
+    
+    console.log('🔄 状態を更新中...');
+    
+    // メッセージとセッション時間を保存
     setInterviewMessages(messages);
     setSessionDuration(duration || 0);
     
-    // 評価画面を表示 - 強制的に
-    console.log('🎯 評価画面フラグを設定中...');
+    // ページ状態を評価画面に変更
+    console.log('🎯 pageStateをevaluationに変更');
+    setPageState('evaluation');
     
-    // 重要: 面接終了時は面接チャット画面を無効化
-    setInterviewStarted(false);
-    setShowEvaluation(true);
-    
-    // 状態更新の確認用 - 次のレンダリングサイクルで
-    setTimeout(() => {
-      console.log('📊 状態更新後チェック:');
-      console.log('  - showEvaluation should be true');
-      console.log('  - interviewStarted should be false'); 
-      console.log('  - interviewMessages should have', messages.length, 'items');
-    }, 100);
-    
-    console.log('✅ handleSessionEnd処理完了 - 評価画面へ遷移予定');
-  };
+    console.log('✅ handleSessionEnd処理完了 - 評価画面表示に切り替え');
+  }, [pageState, interviewMessages.length]);
 
   const startInterview = () => {
-    setInterviewStarted(true);
+    console.log('🎯 面接開始');
+    setPageState('interview');
   };
 
-  console.log('🔍 InterviewPage レンダリング状態チェック:');
+  console.log('🔍 [NEW] InterviewPage レンダリング状態チェック:');
   console.log('  - loading:', loading);
   console.log('  - error:', error);
-  console.log('  - interviewStarted:', interviewStarted);
-  console.log('  - showEvaluation:', showEvaluation);
+  console.log('  - pageState:', pageState);
+  console.log('  - interviewMessages.length:', interviewMessages.length);
   console.log('  - essayContent:', essayContent ? 'あり' : 'なし');
 
   if (loading) {
@@ -247,7 +257,7 @@ export default function InterviewPage() {
     );
   }
 
-  if (!interviewStarted && essayContent) {
+  if (pageState === 'start' && essayContent) {
     console.log('🚀 面接開始前画面を表示');
     return (
       <div className="min-h-screen bg-black text-white">
@@ -337,10 +347,10 @@ export default function InterviewPage() {
     );
   }
 
-  // 評価画面の表示
-  if (showEvaluation) {
+  // 評価画面の表示 - 最優先チェック
+  if (pageState === 'evaluation' && interviewMessages.length > 0) {
     console.log('🎯 評価画面を表示中');
-    console.log('  - showEvaluation:', showEvaluation);
+    console.log('  - pageState:', pageState);
     console.log('  - interviewMessages.length:', interviewMessages.length);
     console.log('  - sessionDuration:', sessionDuration);
     
@@ -350,17 +360,11 @@ export default function InterviewPage() {
         sessionDuration={sessionDuration}
         onRetry={() => {
           console.log('🔄 面接をもう一度実行');
-          console.log('📊 リトライ前の状態:');
-          console.log('  - showEvaluation:', showEvaluation);
-          console.log('  - interviewStarted:', interviewStarted);
           
           // 状態をリセット
-          setShowEvaluation(false);
           setInterviewMessages([]);
           setSessionDuration(0);
-          
-          // 面接を再開始
-          setInterviewStarted(true);
+          setPageState('interview');
           
           console.log('✅ 面接リトライ準備完了');
         }}
@@ -372,7 +376,7 @@ export default function InterviewPage() {
     );
   }
 
-  if (interviewStarted && essayContent) {
+  if (pageState === 'interview' && essayContent) {
     console.log('💬 面接チャット画面を表示');
     return (
       <OptimizedInterviewChat
@@ -383,6 +387,12 @@ export default function InterviewPage() {
   }
 
   console.log('⚠️ どの条件にも該当しない - nullを返す');
-  console.log('最終状態:', { loading, error, interviewStarted, showEvaluation, essayContent: !!essayContent });
+  console.log('最終状態:', { 
+    loading, 
+    error, 
+    pageState,
+    interviewMessages: interviewMessages.length,
+    essayContent: !!essayContent 
+  });
   return null;
 }
